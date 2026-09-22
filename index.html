@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>MPS 관리센터</title>
+<title>주식회사 공정컴퍼니 MPS 관리센터</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -163,7 +163,7 @@ tr.sum td{font-weight:700;border-bottom:0}
 <div id="banner"></div>
 <header class="top" id="top" hidden>
   <div class="bar">
-    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:var(--key)"></i></span><span id="brandName">MPS 관리센터</span></div>
+    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:var(--key)"></i></span><span id="brandName">주식회사 공정컴퍼니 MPS 관리센터</span></div>
     <div class="mode" role="group" aria-label="화면 전환" id="modeSwitch" hidden>
       <button data-mode="admin" aria-pressed="true">관리자</button>
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
@@ -275,7 +275,7 @@ function showLogin(msg=''){
   $('#top').hidden=true;
   const up=ui.authMode==='signup';
   $('#app').innerHTML=`<div class="login"><div class="sec">
-    <div class="brand" style="margin-bottom:14px"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:var(--key)"></i></span>MPS 관리센터</div>
+    <div class="brand" style="margin-bottom:14px"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:var(--key)"></i></span>주식회사 공정컴퍼니 MPS 관리센터</div>
     <h1>${up?'고객사 계정 만들기':'로그인'}</h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
     ${msg?`<div class="note" style="margin:0 0 12px">${esc(msg)}</div>`:''}
     <form id="authForm">
