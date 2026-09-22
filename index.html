@@ -393,7 +393,7 @@ function tonerBlock(d,portal){
 function devCard(d,admin=true){
   const last=lastBill(d.id);
   return `<div class="dev"><div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1;min-width:0">
-  <div class="t" style="font-weight:600">${esc(d.model)} <span class="pill ${d.color_type==='컬러'?'color':'mono'}">${esc(d.color_type)}</span></div>
+  <div class="t" style="font-weight:600">${esc(d.model)} <span class="pill ${d.color_type==='컬러'?'color':'mono'}">${d.color_type==='컬러'?'컬러 겸용':'흑백 전용'}</span></div>
   <div class="m" style="color:var(--muted);font-size:13px">${admin?esc(cname(d.client_id))+' · ':''}${esc(d.location||'')} · S/N ${esc(d.serial||'-')}${d.ip?' · '+esc(d.ip):''}</div></div>
   ${admin?`<div class="acts" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-act="remote" data-id="${d.id}">원격</button><button class="btn sm" data-act="read" data-id="${d.id}">검침</button><button class="btn sm" data-act="edit-device" data-id="${d.id}">수정</button></div>`:''}</div>
   <div class="cnt num"><div>흑백 누적 <b>${last?nf(last.mono):'-'}</b></div><div>컬러 누적 <b>${last?nf(last.color):'-'}</b></div></div>
@@ -531,7 +531,7 @@ function deviceForm(d){
   openForm(d?'장비 수정':'장비 등록',[
     {k:'client_id',label:'거래처',type:'select',options:clientOpts(),req:true},
     {k:'model',label:'모델명',req:true,list:'models',ph:'예: 삼성 SL-X6250LX'},
-    {k:'color_type',label:'종류',type:'select',options:[['컬러','컬러'],['흑백','흑백']],pair:true},{k:'serial',label:'시리얼 번호',hint:'수집 프로그램이 이 번호로 장비를 찾아요'},
+    {k:'color_type',label:'종류',type:'select',options:[['컬러','컬러 복합기 (흑백+컬러 출력)'],['흑백','흑백 전용']],pair:true},{k:'serial',label:'시리얼 번호',hint:'수집 프로그램이 이 번호로 장비를 찾아요'},
     {k:'location',label:'설치 위치',pair:true,ph:'예: 2층 사무실'},{k:'ip',label:'IP 주소',ph:'192.168.0.200'},
     {k:'base_fee',label:'월 기본료 (원)',type:'number',req:true},
     {k:'incl_mono',label:'무료 흑백 (장)',type:'number',pair:true},{k:'incl_color',label:'무료 컬러 (장)',type:'number'},
