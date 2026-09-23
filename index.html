@@ -210,7 +210,7 @@ const TC={K:{n:'검정',c:'#2B2F36'},C:{n:'시안',c:'#00A3D9'},M:{n:'마젠타'
 const LOW=20,OUT=5;
 
 let me=null;
-const S={clients:[],devices:[],bills:[],tickets:[],faxes:[],orders:[],requests:[],cats:[],agents:[],profiles:[]};
+const S={clients:[],devices:[],bills:[],tickets:[],faxes:[],orders:[],requests:[],cats:[],agents:[],profiles:[],docs:[]};
 const ui={mode:'admin',tab:'home',month:thisMonth,portalClient:null,devFilter:'',authMode:'login'};
 
 const isAdmin=()=>me&&me.role==='admin';
@@ -228,6 +228,12 @@ const tWorst=d=>{const v=tonerKeys(d).map(k=>tLevel(d,k)).filter(x=>x!=null);ret
 const lowKeys=d=>tonerKeys(d).filter(k=>{const v=tLevel(d,k);return v!=null&&v<=LOW});
 
 /* ---------- 청구 ---------- */
+function contractInfo(d){
+  if(!d.contract_end)return null;
+  const end=new Date(d.contract_end+'T23:59:59+09:00');
+  const days=Math.ceil((end-Date.now())/86400000);
+  return {end:d.contract_end,start:d.contract_start,days,soon:days<=60&&days>=0,over:days<0};
+}
 const bill=(did,m)=>S.bills.find(b=>b.device_id===did&&b.month===m);
 const lastBill=did=>S.bills.filter(b=>b.device_id===did).sort((a,b)=>a.month<b.month?1:-1)[0];
 const lastUsage=did=>S.bills.filter(b=>b.device_id===did&&!b.first_reading).sort((a,b)=>a.month<b.month?1:-1)[0];
@@ -250,6 +256,7 @@ async function load(){
     orders:sb.from('toner_orders').select('*').order('created_at',{ascending:false}).limit(300),
     requests:sb.from('service_requests').select('*').order('created_at',{ascending:false}).limit(300),
     cats:sb.from('service_categories').select('*').order('sort'),
+    docs:sb.from('client_documents').select('*').order('created_at',{ascending:false}),
   };
   if(isAdmin()){jobs.agents=sb.from('agents').select('*').order('created_at');jobs.profiles=sb.from('profiles').select('*').order('created_at')}
   const keys=Object.keys(jobs);const res=await Promise.all(keys.map(k=>jobs[k]));
@@ -357,6 +364,8 @@ function vHome(){
     <button class="stat ${low.length?'alert':''}" data-tab="toner"><div class="v">${low.length}대</div><div class="k">토너 부족</div></button>
     <button class="stat ${waiting.length?'alert':''}" data-tab="support"><div class="v">${waiting.length}건</div><div class="k">처리 중 원격지원</div></button>
   </div>
+  ${(()=>{const ex=S.devices.map(d=>({d,c:contractInfo(d)})).filter(x=>x.c&&(x.c.soon||x.c.over));
+    return ex.length?`<div class="note" style="margin:0 0 14px">계약 만료가 가까운 장비 ${ex.length}대: ${ex.map(x=>esc(cname(x.d.client_id))+' '+esc(x.d.model)+(x.c.over?' (만료됨)':` (${x.c.days}일 남음)`)).join(', ')}</div>`:''})()}
   ${offline?`<div class="note" style="margin:0 0 14px">수집 프로그램 ${offline}대가 3시간 넘게 보고하지 않았어요. 거래처 탭의 [수집 토큰]에서 확인하세요.</div>`:''}
   <div class="grid2">
     <div class="sec"><div class="sec-h"><h2>토너 부족</h2>${ord?`<span class="pill new">고객 요청 ${ord}건</span>`:''}<div class="right"><button class="btn sm" data-tab="toner">토너 관리</button></div></div>
@@ -375,8 +384,8 @@ function vClients(){
   return `<h1>거래처</h1><p class="sub">렌탈 계약을 맺은 고객사</p>
   <div class="sec"><div class="sec-h"><h2>${S.clients.length}곳</h2><div class="right"><button class="btn primary" data-act="add-client">거래처 추가</button></div></div>
   <div class="list">${S.clients.length?S.clients.map(c=>{const n=S.devices.filter(d=>d.client_id===c.id).length;const b=clientBill(c.id,thisMonth);const ag=S.agents.filter(a=>a.client_id===c.id&&a.active);const users=S.profiles.filter(p=>p.client_id===c.id).length;
-  return `<div class="item"><div class="main"><div class="t">${esc(c.name)}</div><div class="m">${esc(c.contact||'')} ${esc(c.phone||'')} · 장비 ${n}대 · 이번 달 ${won(b.total)}</div><div class="m">고객 계정 ${users}개 · 수집 프로그램 ${ag.length?ag.map(a=>a.last_seen_at?'최근 보고 '+dt(a.last_seen_at):'보고 없음').join(', '):'없음'}</div></div>
-  <div class="acts"><button class="btn sm" data-act="invoice" data-id="${c.id}">청구서</button><button class="btn sm" data-act="agents" data-id="${c.id}">수집 토큰</button><button class="btn sm" data-act="edit-client" data-id="${c.id}">수정</button></div></div>`}).join(''):'<div class="empty">첫 거래처를 추가해 보세요.</div>'}</div></div>`;
+  return `<div class="item"><div class="main"><div class="t">${esc(c.name)}</div><div class="m">${esc(c.contact||'')} ${esc(c.phone||'')} · 장비 ${n}대 · 이번 달 ${won(b.total)}</div><div class="m">서류 ${S.docs.filter(x=>x.client_id===c.id).length}건 · 고객 계정 ${users}개 · 수집 프로그램 ${ag.length?ag.map(a=>a.last_seen_at?'최근 보고 '+dt(a.last_seen_at):'보고 없음').join(', '):'없음'}</div></div>
+  <div class="acts"><button class="btn sm" data-act="invoice" data-id="${c.id}">청구서</button><button class="btn sm" data-act="docs" data-id="${c.id}">서류</button><button class="btn sm" data-act="agents" data-id="${c.id}">수집 토큰</button><button class="btn sm" data-act="edit-client" data-id="${c.id}">수정</button></div></div>`}).join(''):'<div class="empty">첫 거래처를 추가해 보세요.</div>'}</div></div>`;
 }
 function tonerBlock(d,portal){
   const u=lastUsage(d.id);const lk=lowKeys(d);const has=tonerKeys(d).some(k=>tLevel(d,k)!=null);
@@ -397,7 +406,8 @@ function devCard(d,admin=true){
   <div class="m" style="color:var(--muted);font-size:13px">${admin?esc(cname(d.client_id))+' · ':''}${esc(d.location||'')} · S/N ${esc(d.serial||'-')}${d.ip?' · '+esc(d.ip):''}</div></div>
   ${admin?`<div class="acts" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-act="remote" data-id="${d.id}">원격</button><button class="btn sm" data-act="read" data-id="${d.id}">검침</button><button class="btn sm" data-act="edit-device" data-id="${d.id}">수정</button></div>`:''}</div>
   <div class="cnt num"><div>흑백 누적 <b>${last?nf(last.mono):'-'}</b></div><div>컬러 누적 <b>${last?nf(last.color):'-'}</b></div></div>
-  <div style="font-size:13px;color:var(--muted);margin-top:4px">${last?`마지막 검침 ${mLabel(last.month)}`:'검침 기록 없음'}${d.last_seen_at?` · 자동 수집 ${dt(d.last_seen_at)}`:''}${admin?` · 기본료 ${won(d.base_fee)} · 무료 흑백 ${nf(d.incl_mono)}장 / 컬러 ${nf(d.incl_color)}장 · 초과 흑백 ${nf(d.rate_mono)}원 / 컬러 ${nf(d.rate_color)}원`:''}</div>${admin?tonerBlock(d,false):''}</div>`;
+  <div style="font-size:13px;color:var(--muted);margin-top:4px">${last?`마지막 검침 ${mLabel(last.month)}`:'검침 기록 없음'}${d.last_seen_at?` · 자동 수집 ${dt(d.last_seen_at)}`:''}${admin?` · 기본료 ${won(d.base_fee)} · 무료 흑백 ${nf(d.incl_mono)}장 / 컬러 ${nf(d.incl_color)}장 · 초과 흑백 ${nf(d.rate_mono)}원 / 컬러 ${nf(d.rate_color)}원`:''}</div>${(()=>{const c=contractInfo(d);if(!c&&!d.deposit)return '';
+  return `<div style="font-size:13px;color:var(--muted);margin-top:4px">${c?`계약 ${esc(c.start||'')} ~ ${esc(c.end)} ${c.over?'<span class="pill new">만료됨</span>':c.soon?`<span class="pill warn">만료 ${c.days}일 전</span>`:`(${Math.floor(c.days/30)}개월 남음)`}`:''}${admin&&d.deposit?` · 보증금 ${won(d.deposit)}`:''}</div>`})()}${admin?tonerBlock(d,false):''}</div>`;
 }
 function vDevices(){
   const list=S.devices.filter(d=>!ui.devFilter||d.client_id===ui.devFilter);
@@ -479,6 +489,7 @@ function vPortal(){
   <div class="sec" style="margin-top:14px"><div class="sec-h"><h2>토너 상태</h2>${devs.some(d=>lowKeys(d).length)?'<span class="pill warn">부족한 토너가 있어요</span>':''}</div>${devs.map(d=>`<div style="font-weight:600;font-size:14px;margin-top:6px">${esc(d.model)} <span style="color:var(--muted);font-weight:400">${esc(d.location||'')}</span></div>${tonerBlock(d,true)}`).join('')||'<div class="empty">설치된 장비가 없어요.</div>'}</div>
   <div class="sec"><div class="sec-h"><h2>이번 달 예상 요금</h2><div class="right"><button class="btn sm" data-act="invoice" data-id="${cid}">자세히</button></div></div><div style="font-size:26px;font-weight:700" class="num">${won(b.total)}</div><div style="font-size:13px;color:var(--muted)">VAT 포함 · 월말 검침 후 확정</div></div>
   <div class="sec"><div class="sec-h"><h2>팩스 수신함</h2>${unread?`<span class="pill new">새 팩스 ${unread}</span>`:''}</div><div class="list">${faxes.length?faxes.map(f=>faxItem(f,false)).join(''):'<div class="empty">받은 팩스가 없어요.</div>'}</div></div>
+  ${(()=>{const dl=S.docs.filter(d=>d.client_id===cid&&d.share_with_client);return dl.length?`<div class="sec"><div class="sec-h"><h2>서류</h2></div><div class="list">${dl.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.title)} <span class="pill">${esc(d.category)}</span></div><div class="m">${d.signed_at?'작성일 '+esc(d.signed_at):''}</div></div><div class="acts"><button class="btn sm" data-act="doc-open" data-id="${d.id}">열기</button></div></div>`).join('')}</div></div>`:''})()}
   <div class="sec"><div class="sec-h"><h2>원격지원</h2><div class="right"><button class="btn primary" data-act="p-ticket">지원 요청하기</button></div></div><div class="list">${tks.length?tks.map(tkItem).join(''):'<div class="empty">프린터에 문제가 있으면 요청해 주세요. 담당자가 원격으로 확인해 드려요.</div>'}</div></div>
   <div class="sec"><div class="sec-h"><h2>우리 회사 장비 ${devs.length}대</h2></div>${devs.map(d=>devCard(d,false)).join('')||'<div class="empty">설치된 장비가 없어요.</div>'}</div>
   <div class="sec"><div class="sec-h"><h2>다른 서비스도 필요하세요?</h2></div><div class="cats">${S.cats.filter(x=>x.key!=='print_rental'&&x.active).map(x=>`<button class="cat" data-act="p-req" data-id="${x.key}"><div class="ic">${ICONS[x.key]||'📦'}</div><div class="n">${esc(x.name)}</div><div class="d">문의하기</div></button>`).join('')}</div>
@@ -491,7 +502,8 @@ function closeSheet(){sheet.hidden=true;$('#sheetForm').innerHTML='';$('#sheetVi
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>el.classList.remove('show'),2600)}
 function field(fd,v){
   const id='f_'+fd.k,req=fd.req?'required':'';let inp;
-  if(fd.type==='checks')inp=`<div class="checks">${fd.options.map(([ov,ol])=>`<label><input type="checkbox" name="${fd.k}" value="${esc(ov)}" ${(v||[]).includes(ov)?'checked':''}>${esc(ol)}</label>`).join('')}</div>`;
+  if(fd.type==='check')inp=`<label style="display:flex;gap:8px;align-items:center;font-weight:500;color:var(--ink)"><input type="checkbox" name="${fd.k}" ${v?'checked':''}>${esc(fd.cap||'')}</label>`;
+  else if(fd.type==='checks')inp=`<div class="checks">${fd.options.map(([ov,ol])=>`<label><input type="checkbox" name="${fd.k}" value="${esc(ov)}" ${(v||[]).includes(ov)?'checked':''}>${esc(ol)}</label>`).join('')}</div>`;
   else if(fd.type==='select')inp=`<select id="${id}" name="${fd.k}" ${req}>${fd.options.map(([ov,ol])=>`<option value="${esc(ov)}" ${String(v)===String(ov)?'selected':''}>${esc(ol)}</option>`).join('')}</select>`;
   else if(fd.type==='textarea')inp=`<textarea id="${id}" name="${fd.k}" ${req} placeholder="${esc(fd.ph||'')}">${esc(v)}</textarea>`;
   else if(fd.type==='file')inp=`<input id="${id}" name="${fd.k}" type="file" accept="application/pdf,image/*" ${req}>`;
@@ -506,6 +518,7 @@ function openForm(title,fields,init,onSave,{submit='저장',extra='',intro=''}={
   f.onsubmit=async e=>{e.preventDefault();
     const data={};for(const fd of fields){
       if(fd.type==='checks'){data[fd.k]=[...f.querySelectorAll(`input[name="${fd.k}"]:checked`)].map(i=>i.value);continue}
+      if(fd.type==='check'){data[fd.k]=f.elements[fd.k].checked;continue}
       const el=f.elements[fd.k];if(!el)continue;
       if(fd.type==='file')data[fd.k]=el.files[0]||null;else if(fd.type==='number')data[fd.k]=el.value===''?null:Number(el.value);else data[fd.k]=el.value.trim()||null}
     const btn=f.querySelector('[type=submit]');btn.disabled=true;
@@ -535,9 +548,11 @@ function deviceForm(d){
     {k:'location',label:'설치 위치',pair:true,ph:'예: 2층 사무실'},{k:'ip',label:'IP 주소',ph:'192.168.0.200'},
     {k:'base_fee',label:'월 기본료 (원)',type:'number',req:true},
     {k:'incl_mono',label:'무료 흑백 (장)',type:'number',pair:true},{k:'incl_color',label:'무료 컬러 (장)',type:'number'},
-    {k:'rate_mono',label:'초과 흑백 장당 (원)',type:'number',pair:true},{k:'rate_color',label:'초과 컬러 장당 (원)',type:'number'}],
-    d||{client_id:ui.devFilter||S.clients[0].id,color_type:'컬러',model:'삼성 SL-X6250LX',rate_mono:10,rate_color:80},
-    async x=>{['base_fee','incl_mono','incl_color','rate_mono','rate_color'].forEach(k=>x[k]=nz(x[k]));
+    {k:'rate_mono',label:'초과 흑백 장당 (원)',type:'number',pair:true},{k:'rate_color',label:'초과 컬러 장당 (원)',type:'number'},
+    {k:'deposit',label:'보증금 (원)',type:'number',hint:'부가세 별도 금액'},
+    {k:'contract_start',label:'계약 시작일',type:'date',pair:true},{k:'contract_end',label:'계약 종료일',type:'date'}],
+    d||{client_id:ui.devFilter||S.clients[0].id,color_type:'컬러',model:'삼성 SL-X6250LX',base_fee:210000,incl_mono:3000,incl_color:100,rate_mono:10,rate_color:100,deposit:300000},
+    async x=>{['base_fee','incl_mono','incl_color','rate_mono','rate_color','deposit'].forEach(k=>x[k]=nz(x[k]));
       if(d)await q(sb.from('devices').update(x).eq('id',d.id));else await q(sb.from('devices').insert(x))},
     {extra:d?`<button type="button" class="btn danger ghost" data-act="del-device" data-id="${d.id}" style="margin-right:auto">삭제</button>`:''});
 }
@@ -624,6 +639,31 @@ function reqForm(cat){
   openForm(`${catName(cat)} 문의`,[{k:'detail',label:'필요한 내용',type:'textarea',req:true,ph:'일정, 규모, 예산 등을 적어 주세요'},{k:'phone',label:'연락받을 번호',type:'tel'}],{},
     async x=>{await q(sb.from('service_requests').insert({...x,category:cat,client_id:ui.portalClient,status:'접수'}))},{submit:'문의 보내기'});
 }
+const DOC_CATS=['렌탈계약서','CMS이체신청서','사업자등록증','견적서','인수인계확인서','기타'];
+function docsView(cid){
+  const list=S.docs.filter(d=>d.client_id===cid);
+  openView(`${cname(cid)} 서류함`,`<p class="sub" style="margin-bottom:12px">계약서, CMS 이체신청서 등을 보관해요. PDF나 사진으로 올리면 언제든 다시 열어볼 수 있어요.</p>
+  <div class="list">${list.length?list.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.title)} <span class="pill">${esc(d.category)}</span>${d.share_with_client?' <span class="pill go">고객 공개</span>':''}</div>
+  <div class="m">${d.signed_at?'작성일 '+esc(d.signed_at)+' · ':''}등록 ${dt(d.created_at)}</div>${d.note?`<div class="m">${esc(d.note)}</div>`:''}</div>
+  <div class="acts"><button class="btn sm" data-act="doc-open" data-id="${d.id}">열기</button><button class="btn sm danger" data-act="doc-del" data-id="${d.id}">삭제</button></div></div>`).join(''):'<div class="empty">보관된 서류가 없어요.</div>'}</div>
+  <button class="btn primary" style="margin-top:12px" data-act="doc-add" data-id="${cid}">서류 올리기</button>`);
+}
+function docForm(cid){
+  closeSheet();
+  openForm(`${cname(cid)} 서류 올리기`,[
+    {k:'category',label:'종류',type:'select',options:DOC_CATS.map(c=>[c,c])},
+    {k:'title',label:'제목',req:true,ph:'예: 2026년 렌탈계약서'},
+    {k:'signed_at',label:'작성일',type:'date'},
+    {k:'note',label:'메모',ph:'예: 원본은 사무실 보관'},
+    {k:'share_with_client',label:'고객사 공개',type:'check',cap:'고객사 화면에서도 볼 수 있게 하기'},
+    {k:'file',label:'파일 (PDF·사진·문서)',type:'file',req:true}],
+    {category:'렌탈계약서'},
+    async x=>{
+      const safe=x.file.name.replace(/[^\w.\-]/g,'_');const path=`${cid}/${Date.now()}_${safe}`;
+      await q(sb.storage.from('docs').upload(path,x.file,{contentType:x.file.type||'application/octet-stream'}));
+      await q(sb.from('client_documents').insert({client_id:cid,category:x.category,title:x.title,signed_at:x.signed_at||null,note:x.note,share_with_client:!!x.share_with_client,file_path:path}));
+    },{submit:'올리기'});
+}
 function agentsView(cid){
   const list=S.agents.filter(a=>a.client_id===cid);
   openView(`${cname(cid)} 수집 토큰`,`<p class="sub" style="margin-bottom:12px">고객사 PC의 수집 프로그램에 이 토큰을 넣으면 카운터와 토너 잔량이 자동으로 올라와요. 토큰은 비밀번호처럼 관리하세요.</p>
@@ -675,7 +715,13 @@ document.addEventListener('click',async e=>{
     case'rq':await q(sb.from('service_requests').update({status:v}).eq('id',id));await load();break;
     case'p-ticket':ticketForm(null,true);break;
     case'p-req':reqForm(id);break;
-    case'agents':agentsView(id);break;
+    case'docs':docsView(id);break;
+    case'doc-add':docForm(id);break;
+    case'doc-open':{const d=S.docs.find(x=>x.id===id);if(!d)break;const w=window.open('','_blank');
+      const {data,error}=await sb.storage.from('docs').createSignedUrl(d.file_path,600);
+      if(error){w&&w.close();throw error}
+      if(w)w.location=data.signedUrl;else location.href=data.signedUrl;break}
+    case'doc-del':{const d=S.docs.find(x=>x.id===id);if(d&&confirm('이 서류를 삭제할까요?')){await sb.storage.from('docs').remove([d.file_path]);await q(sb.from('client_documents').delete().eq('id',id));await load();docsView(d.client_id);toast('삭제했어요')}break}
     case'agent-new':await q(sb.from('agents').insert({client_id:id,name:cname(id)+' 수집 PC'}));await load();agentsView(id);toast('토큰을 만들었어요');break;
     case'agent-off':{const ag=S.agents.find(x=>x.id===id);if(confirm('이 토큰을 중지할까요? 해당 PC는 더 이상 보고할 수 없어요.')){await q(sb.from('agents').update({active:false}).eq('id',id));await load();if(ag)agentsView(ag.client_id)}break}
     case'copy':try{await navigator.clipboard.writeText(v);toast('복사했어요')}catch(_){toast('길게 눌러 직접 복사하세요')}break;
