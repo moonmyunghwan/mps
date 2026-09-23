@@ -817,7 +817,4 @@ document.addEventListener('blur',e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)closeSheet()});
 setInterval(()=>{if(me&&document.visibilityState==='visible'&&sheet.hidden)load().catch(()=>{})},60000);
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){me=null;showLogin()}});
-boot().catch(err=>{console.error(err);showLogin(errMsg(err))});
-</script>
-</body>
-</html>
+boot().catch(err=>{console.error(err);showLogin(errMsg(er
