@@ -506,7 +506,7 @@ function field(fd,v){
   else if(fd.type==='checks')inp=`<div class="checks">${fd.options.map(([ov,ol])=>`<label><input type="checkbox" name="${fd.k}" value="${esc(ov)}" ${(v||[]).includes(ov)?'checked':''}>${esc(ol)}</label>`).join('')}</div>`;
   else if(fd.type==='select')inp=`<select id="${id}" name="${fd.k}" ${req}>${fd.options.map(([ov,ol])=>`<option value="${esc(ov)}" ${String(v)===String(ov)?'selected':''}>${esc(ol)}</option>`).join('')}</select>`;
   else if(fd.type==='textarea')inp=`<textarea id="${id}" name="${fd.k}" ${req} placeholder="${esc(fd.ph||'')}">${esc(v)}</textarea>`;
-  else if(fd.type==='file')inp=`<input id="${id}" name="${fd.k}" type="file" accept="application/pdf,image/*" ${req}>`;
+  else if(fd.type==='file')inp=`<input id="${id}" name="${fd.k}" type="file" ${fd.accept===''?'':`accept="${fd.accept||'application/pdf,image/*'}"`} ${req}>`;
   else inp=`<input id="${id}" name="${fd.k}" type="${fd.type||'text'}" ${fd.type==='number'?'inputmode="numeric" min="0" step="1"':''} ${fd.max?`max="${fd.max}"`:''} value="${esc(v??'')}" ${fd.list?`list="${fd.list}"`:''} ${req} placeholder="${esc(fd.ph||'')}">`;
   return `<div class="f"><label for="${id}">${esc(fd.label)}</label>${inp}${fd.hint?`<div style="font-size:12px;color:var(--muted)">${esc(fd.hint)}</div>`:''}</div>`;
 }
@@ -656,7 +656,7 @@ function docForm(cid){
     {k:'signed_at',label:'작성일',type:'date'},
     {k:'note',label:'메모',ph:'예: 원본은 사무실 보관'},
     {k:'share_with_client',label:'고객사 공개',type:'check',cap:'고객사 화면에서도 볼 수 있게 하기'},
-    {k:'file',label:'파일 (PDF·사진·문서)',type:'file',req:true}],
+    {k:'file',label:'파일 (PDF, 워드, 엑셀, 한글, 사진 등)',type:'file',accept:'',req:true}],
     {category:'렌탈계약서'},
     async x=>{
       const safe=x.file.name.replace(/[^\w.\-]/g,'_');const path=`${cid}/${Date.now()}_${safe}`;
