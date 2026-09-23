@@ -650,24 +650,33 @@ function docsView(cid){
   openView(`${cname(cid)} 서류함`,`<p class="sub" style="margin-bottom:12px">계약서, CMS 이체신청서 등을 보관해요. PDF나 사진으로 올리면 언제든 다시 열어볼 수 있어요.</p>
   <div class="list">${list.length?list.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.title)} <span class="pill">${esc(d.category)}</span>${d.share_with_client?' <span class="pill go">고객 공개</span>':''}</div>
   <div class="m">${d.signed_at?'작성일 '+esc(d.signed_at)+' · ':''}등록 ${dt(d.created_at)}</div>${d.note?`<div class="m">${esc(d.note)}</div>`:''}</div>
-  <div class="acts"><button class="btn sm" data-act="doc-open" data-id="${d.id}">열기</button><button class="btn sm danger" data-act="doc-del" data-id="${d.id}">삭제</button></div></div>`).join(''):'<div class="empty">보관된 서류가 없어요.</div>'}</div>
+  <div class="acts"><button class="btn sm" data-act="doc-open" data-id="${d.id}">열기</button><button class="btn sm" data-act="doc-edit" data-id="${d.id}">수정</button><button class="btn sm danger" data-act="doc-del" data-id="${d.id}">삭제</button></div></div>`).join(''):'<div class="empty">보관된 서류가 없어요.</div>'}</div>
   <button class="btn primary" style="margin-top:12px" data-act="doc-add" data-id="${cid}">서류 올리기</button>`);
 }
-function docForm(cid){
+function docForm(cid,doc){
   closeSheet();
-  openForm(`${cname(cid)} 서류 올리기`,[
+  openForm(doc?'서류 수정':`${cname(cid)} 서류 올리기`,[
     {k:'category',label:'종류',type:'select',options:DOC_CATS.map(c=>[c,c])},
     {k:'title',label:'제목',req:true,ph:'예: 2026년 렌탈계약서'},
     {k:'signed_at',label:'작성일',type:'ymd'},
     {k:'note',label:'메모',ph:'예: 원본은 사무실 보관'},
     {k:'share_with_client',label:'고객사 공개',type:'check',cap:'고객사 화면에서도 볼 수 있게 하기'},
-    {k:'file',label:'파일 (PDF, 워드, 엑셀, 한글, 사진 등)',type:'file',accept:'',req:true}],
-    {category:'렌탈계약서'},
+    {k:'file',label:doc?'파일 교체 (안 고르면 기존 파일 유지)':'파일 (PDF, 워드, 엑셀, 한글, 사진 등)',type:'file',accept:'',req:!doc}],
+    doc||{category:'렌탈계약서'},
     async x=>{
-      const safe=x.file.name.replace(/[^\w.\-]/g,'_');const path=`${cid}/${Date.now()}_${safe}`;
-      await q(sb.storage.from('docs').upload(path,x.file,{contentType:x.file.type||'application/octet-stream'}));
-      await q(sb.from('client_documents').insert({client_id:cid,category:x.category,title:x.title,signed_at:x.signed_at||null,note:x.note,share_with_client:!!x.share_with_client,file_path:path}));
-    },{submit:'올리기'});
+      const row={category:x.category,title:x.title,signed_at:x.signed_at||null,note:x.note,share_with_client:!!x.share_with_client};
+      if(x.file){
+        const safe=x.file.name.replace(/[^\w.\-]/g,'_');const path=`${cid}/${Date.now()}_${safe}`;
+        await q(sb.storage.from('docs').upload(path,x.file,{contentType:x.file.type||'application/octet-stream'}));
+        row.file_path=path;
+      }
+      if(doc){
+        await q(sb.from('client_documents').update(row).eq('id',doc.id));
+        if(x.file&&doc.file_path){try{await sb.storage.from('docs').remove([doc.file_path])}catch(_){}}
+      }else{
+        await q(sb.from('client_documents').insert({client_id:cid,...row}));
+      }
+    },{submit:doc?'저장':'올리기'});
 }
 function agentsView(cid){
   const list=S.agents.filter(a=>a.client_id===cid);
@@ -722,6 +731,7 @@ document.addEventListener('click',async e=>{
     case'p-req':reqForm(id);break;
     case'docs':docsView(id);break;
     case'doc-add':docForm(id);break;
+    case'doc-edit':{const d=S.docs.find(x=>x.id===id);if(d)docForm(d.client_id,d);break}
     case'doc-open':{const d=S.docs.find(x=>x.id===id);if(!d)break;const w=window.open('','_blank');
       const {data,error}=await sb.storage.from('docs').createSignedUrl(d.file_path,600);
       if(error){w&&w.close();throw error}
