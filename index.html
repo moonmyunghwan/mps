@@ -738,12 +738,17 @@ document.addEventListener('change',async e=>{
   if(e.target.id==='portalClient'){ui.portalClient=e.target.value;render()}
   if(e.target.dataset.link){try{await q(sb.from('profiles').update({client_id:e.target.value||null}).eq('id',e.target.dataset.link));toast('연결했어요');await load()}catch(err){toast(errMsg(err))}}
 });
+function fmtYmd(v){const d=(v||'').replace(/[^0-9]/g,'').slice(0,8);
+  if(d.length!==8)return v;return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)}
 document.addEventListener('input',e=>{
   if(!e.target.dataset||!e.target.dataset.ymd)return;
-  let d=e.target.value.replace(/[^0-9]/g,'').slice(0,8);
-  let out=d.slice(0,4);if(d.length>4)out+='-'+d.slice(4,6);if(d.length>6)out+='-'+d.slice(6,8);
-  e.target.value=out;
+  const clean=e.target.value.replace(/[^0-9-]/g,'').slice(0,10);
+  if(clean!==e.target.value)e.target.value=clean;
 });
+document.addEventListener('blur',e=>{
+  if(!e.target.dataset||!e.target.dataset.ymd)return;
+  e.target.value=fmtYmd(e.target.value);
+},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)closeSheet()});
 setInterval(()=>{if(me&&document.visibilityState==='visible'&&sheet.hidden)load().catch(()=>{})},60000);
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){me=null;showLogin()}});
