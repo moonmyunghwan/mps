@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
 
 :root{
@@ -211,9 +212,11 @@ const LOW=20,OUT=5;
 
 let me=null;
 const S={clients:[],devices:[],bills:[],tickets:[],faxes:[],orders:[],requests:[],cats:[],agents:[],profiles:[],docs:[]};
-const ui={mode:'admin',tab:'home',month:thisMonth,portalClient:null,devFilter:'',authMode:'login'};
+const ui={mode:'admin',tab:'home',month:thisMonth,portalClient:null,devFilter:'',authMode:'login',deviceView:null};
 
 const isAdmin=()=>me&&me.role==='admin';
+const isClientAdmin=()=>me&&me.role==='client'&&me.client_role==='admin';
+const canSeeMoney=()=>isAdmin()||isClientAdmin();
 const cname=id=>(S.clients.find(c=>c.id===id)||{name:'(알 수 없는 거래처)'}).name;
 const dev=id=>S.devices.find(d=>d.id===id);
 const catName=k=>(S.cats.find(c=>c.key===k)||{name:k}).name;
@@ -317,7 +320,11 @@ async function boot(){
   if(!session){showLogin();return}
   let p=null;
   try{p=await q(sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle())}catch(e){console.error(e)}
-  me={id:session.user.id,email:session.user.email,role:p?p.role:'client',client_id:p?p.client_id:null};
+  me={id:session.user.id,email:session.user.email,role:p?p.role:'client',client_id:p?p.client_id:null,
+      client_role:p&&p.client_role?p.client_role:'staff',active:p?p.active!==false:true};
+  if(!isAdmin()&&!me.active){$('#top').hidden=false;$('#modeSwitch').hidden=true;$('#tabs').hidden=true;$('#who').textContent=me.email;
+    $('#app').innerHTML='<h1>사용이 중지된 계정이에요</h1><div class="sec"><div class="empty">회사 관리자나 담당자에게 문의해 주세요.</div></div>';return}
+  const h=(location.hash||'').match(/device=([0-9a-f-]{36})/i); if(h) ui.deviceView=h[1];
   if(!isAdmin()&&!me.client_id){showPending();return}
   ui.mode=isAdmin()?'admin':'portal';
   $('#top').hidden=false;$('#modeSwitch').hidden=!isAdmin();$('#who').textContent=me.email;
@@ -404,7 +411,7 @@ function devCard(d,admin=true){
   return `<div class="dev"><div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1;min-width:0">
   <div class="t" style="font-weight:600">${esc(d.model)} <span class="pill ${d.color_type==='컬러'?'color':'mono'}">${d.color_type==='컬러'?'컬러 겸용':'흑백 전용'}</span></div>
   <div class="m" style="color:var(--muted);font-size:13px">${admin?esc(cname(d.client_id))+' · ':''}${esc(d.location||'')} · S/N ${esc(d.serial||'-')}${d.ip?' · '+esc(d.ip):''}</div></div>
-  ${admin?`<div class="acts" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-act="remote" data-id="${d.id}">원격</button><button class="btn sm" data-act="read" data-id="${d.id}">검침</button><button class="btn sm" data-act="edit-device" data-id="${d.id}">수정</button></div>`:''}</div>
+  ${admin?`<div class="acts" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-act="qr" data-id="${d.id}">QR</button><button class="btn sm" data-act="remote" data-id="${d.id}">원격</button><button class="btn sm" data-act="read" data-id="${d.id}">검침</button><button class="btn sm" data-act="edit-device" data-id="${d.id}">수정</button></div>`:''}</div>
   <div class="cnt num"><div>흑백 누적 <b>${last?nf(last.mono):'-'}</b></div><div>컬러 누적 <b>${last?nf(last.color):'-'}</b></div></div>
   <div style="font-size:13px;color:var(--muted);margin-top:4px">${last?`마지막 검침 ${mLabel(last.month)}`:'검침 기록 없음'}${d.last_seen_at?` · 자동 수집 ${dt(d.last_seen_at)}`:''}${admin?` · 기본료 ${won(d.base_fee)} · 무료 흑백 ${nf(d.incl_mono)}장 / 컬러 ${nf(d.incl_color)}장 · 초과 흑백 ${nf(d.rate_mono)}원 / 컬러 ${nf(d.rate_color)}원`:''}</div>${(()=>{const c=contractInfo(d);if(!c&&!d.deposit)return '';
   return `<div style="font-size:13px;color:var(--muted);margin-top:4px">${c?`계약 ${esc(c.start||'')} ~ ${esc(c.end)} ${c.over?'<span class="pill new">만료됨</span>':c.soon?`<span class="pill warn">만료 ${c.days}일 전</span>`:`(${Math.floor(c.days/30)}개월 남음)`}`:''}${admin&&d.deposit?` · 보증금 ${won(d.deposit)}`:''}</div>`})()}${admin?tonerBlock(d,false):''}</div>`;
@@ -466,18 +473,37 @@ function vPlatform(){
   <div class="cats">${S.cats.map(c=>{const n=S.requests.filter(r=>r.category===c.key).length;return `<div class="cat ${c.key==='print_rental'?'on':''}"><div class="ic">${ICONS[c.key]||'📦'}</div><div class="n">${esc(c.name)}</div><div class="d">${c.key==='print_rental'?'운영 중':`문의 ${n}건`}</div></div>`}).join('')}</div>
   <div class="sec" style="margin-top:14px"><div class="sec-h"><h2>받은 문의</h2></div><div class="list">${S.requests.length?S.requests.map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))} <span class="pill ${r.status==='접수'?'new':r.status==='상담중'?'go':'done'}">${esc(r.status)}</span></div><div class="m">${esc(cname(r.client_id))} · ${dt(r.created_at)}${r.phone?' · '+esc(r.phone):''}</div><div class="m">${esc(r.detail)}</div></div><div class="acts">${r.status==='접수'?`<button class="btn sm primary" data-act="rq" data-id="${r.id}" data-v="상담중">상담 시작</button>`:''}${r.status!=='완료'?`<button class="btn sm" data-act="rq" data-id="${r.id}" data-v="완료">완료</button>`:''}</div></div>`).join(''):'<div class="empty">아직 문의가 없어요.</div>'}</div></div>`;
 }
+function roleSelect(p){
+  return `<select data-role="${p.id}" aria-label="권한" style="padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--sheet)">
+    <option value="admin" ${p.client_role==='admin'?'selected':''}>회사 관리자 (금액 보임)</option>
+    <option value="staff" ${p.client_role!=='admin'?'selected':''}>일반 직원 (금액 숨김)</option></select>`;
+}
 function vAccounts(){
   const opts=id=>`<option value="">(연결 안 함)</option>`+S.clients.map(c=>`<option value="${c.id}" ${c.id===id?'selected':''}>${esc(c.name)}</option>`).join('');
   const pend=S.profiles.filter(p=>p.role==='client'&&!p.client_id);
-  return `<h1>계정</h1><p class="sub">고객사 직원이 가입하면 여기서 회사를 연결해 주세요. 연결된 사람은 자기 회사 데이터만 봐요.</p>
-  <div class="sec"><div class="sec-h"><h2>연결 대기 ${pend.length}명</h2></div><div class="list">${S.profiles.map(p=>`<div class="item"><div class="main"><div class="t">${esc(p.display_name||'(이름 없음)')} ${p.role==='admin'?'<span class="pill mono">관리자</span>':!p.client_id?'<span class="pill new">연결 대기</span>':''}</div><div class="m">가입 ${dt(p.created_at)}</div></div>
-    <div class="acts">${p.role==='admin'?'':`<select data-link="${p.id}" aria-label="거래처 연결" style="padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--sheet)">${opts(p.client_id)}</select>`}</div></div>`).join('')}</div>
-  <div class="note">고객사 직원에게 이 사이트 주소를 알려 주고 [고객사 계정 만들기]로 가입하게 하세요. 가입하면 이 목록에 나타나요.</div></div>`;
+  return `<h1>계정</h1><p class="sub">고객사 직원이 가입하면 회사와 권한을 지정해 주세요. 한 회사에 여러 계정을 연결할 수 있어요.</p>
+  <div class="sec"><div class="sec-h"><h2>전체 ${S.profiles.length}명</h2>${pend.length?`<span class="pill new">연결 대기 ${pend.length}</span>`:''}</div>
+  <div class="list">${S.profiles.map(p=>`<div class="item"><div class="main"><div class="t">${esc(p.display_name||'(이름 없음)')} ${p.role==='admin'?'<span class="pill mono">우리 회사 관리자</span>':!p.client_id?'<span class="pill new">연결 대기</span>':p.client_role==='admin'?'<span class="pill go">회사 관리자</span>':'<span class="pill">일반 직원</span>'}${p.active===false?' <span class="pill new">사용 중지</span>':''}</div>
+    <div class="m">${p.client_id?esc(cname(p.client_id))+' · ':''}가입 ${dt(p.created_at)}</div></div>
+    <div class="acts">${p.role==='admin'?'':`<select data-link="${p.id}" aria-label="거래처 연결" style="padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--sheet)">${opts(p.client_id)}</select>${roleSelect(p)}<button class="btn sm ${p.active===false?'':'danger'}" data-act="acc-active" data-id="${p.id}" data-v="${p.active===false?'1':'0'}">${p.active===false?'사용 재개':'사용 중지'}</button><button class="btn sm danger" data-act="acc-del" data-id="${p.id}">삭제</button>`}</div></div>`).join('')}</div>
+  <div class="note">고객사 직원에게 사이트 주소를 알려 주고 [고객사 계정 만들기]로 가입하게 하세요. 회사 관리자로 지정하면 그 고객사가 직접 직원 권한을 관리할 수 있어요. 삭제는 연결을 끊고 사용을 중지하는 것이며, 로그인 계정 자체를 지우려면 Supabase의 Authentication - Users에서 지워 주세요.</div></div>`;
+}
+function vDeviceFocus(d){
+  const u=bill(d.id,thisMonth);
+  return `<div class="toolbar"><button class="btn sm" data-act="portal-all">← 전체 화면 보기</button></div>
+  <h1>${esc(d.model)}</h1><p class="sub">${esc(cname(d.client_id))} ${esc(d.location||'')} · S/N ${esc(d.serial||'-')}</p>
+  ${meters(u?+u.used_mono:0,u?+u.used_color:0,'장 사용')}
+  <div class="sec" style="margin-top:14px"><div class="sec-h"><h2>토너 상태</h2></div>${tonerBlock(d,true)}</div>
+  ${canSeeMoney()&&u?`<div class="sec"><div class="sec-h"><h2>이번 달 이 장비 요금</h2></div><div style="font-size:24px;font-weight:700" class="num">${won(Math.round(+u.supply*1.1))}</div><div style="font-size:13px;color:var(--muted)">VAT 포함 · 흑백 ${nf(u.used_mono)}장 / 컬러 ${nf(u.used_color)}장</div></div>`:''}
+  <div class="sec"><div class="sec-h"><h2>도움이 필요하세요?</h2></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="p-ticket">고장·문제 신고</button><button class="btn" data-act="toner-req" data-id="${d.id}">토너 요청</button></div>
+  <div class="note">신고하시면 담당자가 확인 후 연락드려요.</div></div>`;
 }
 function vPortal(){
   const cid=isAdmin()?(ui.portalClient&&S.clients.find(c=>c.id===ui.portalClient)?ui.portalClient:(S.clients[0]||{}).id):me.client_id;
   if(!cid)return `<h1>고객사 화면</h1><div class="sec"><div class="empty">거래처가 등록되면 고객사 화면을 미리 볼 수 있어요.</div></div>`;
   ui.portalClient=cid;
+  if(ui.deviceView){const fd=S.devices.find(x=>x.id===ui.deviceView&&x.client_id===cid);if(fd)return vDeviceFocus(fd);ui.deviceView=null}
   const c=S.clients.find(x=>x.id===cid)||{name:''};
   const devs=S.devices.filter(d=>d.client_id===cid),b=clientBill(cid,thisMonth);
   const faxes=S.faxes.filter(f=>f.client_id===cid),tks=S.tickets.filter(t=>t.client_id===cid),reqs=S.requests.filter(r=>r.client_id===cid);
@@ -487,11 +513,14 @@ function vPortal(){
   <h1>${esc(c.name)}</h1><p class="sub">${mLabel(thisMonth)} 사용 현황</p>
   ${meters(mono,color,'장 사용')}
   <div class="sec" style="margin-top:14px"><div class="sec-h"><h2>토너 상태</h2>${devs.some(d=>lowKeys(d).length)?'<span class="pill warn">부족한 토너가 있어요</span>':''}</div>${devs.map(d=>`<div style="font-weight:600;font-size:14px;margin-top:6px">${esc(d.model)} <span style="color:var(--muted);font-weight:400">${esc(d.location||'')}</span></div>${tonerBlock(d,true)}`).join('')||'<div class="empty">설치된 장비가 없어요.</div>'}</div>
-  <div class="sec"><div class="sec-h"><h2>이번 달 예상 요금</h2><div class="right"><button class="btn sm" data-act="invoice" data-id="${cid}">자세히</button></div></div><div style="font-size:26px;font-weight:700" class="num">${won(b.total)}</div><div style="font-size:13px;color:var(--muted)">VAT 포함 · 월말 검침 후 확정</div></div>
+  ${canSeeMoney()?`<div class="sec"><div class="sec-h"><h2>이번 달 예상 요금</h2><div class="right"><button class="btn sm" data-act="invoice" data-id="${cid}">자세히</button></div></div><div style="font-size:26px;font-weight:700" class="num">${won(b.total)}</div><div style="font-size:13px;color:var(--muted)">VAT 포함 · 월말 검침 후 확정</div></div>`:''}
   <div class="sec"><div class="sec-h"><h2>팩스 수신함</h2>${unread?`<span class="pill new">새 팩스 ${unread}</span>`:''}</div><div class="list">${faxes.length?faxes.map(f=>faxItem(f,false)).join(''):'<div class="empty">받은 팩스가 없어요.</div>'}</div></div>
   ${(()=>{const dl=S.docs.filter(d=>d.client_id===cid&&d.share_with_client);return dl.length?`<div class="sec"><div class="sec-h"><h2>서류</h2></div><div class="list">${dl.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.title)} <span class="pill">${esc(d.category)}</span></div><div class="m">${d.signed_at?'작성일 '+esc(d.signed_at):''}</div></div><div class="acts"><button class="btn sm" data-act="doc-open" data-id="${d.id}">열기</button></div></div>`).join('')}</div></div>`:''})()}
   <div class="sec"><div class="sec-h"><h2>원격지원</h2><div class="right"><button class="btn primary" data-act="p-ticket">지원 요청하기</button></div></div><div class="list">${tks.length?tks.map(tkItem).join(''):'<div class="empty">프린터에 문제가 있으면 요청해 주세요. 담당자가 원격으로 확인해 드려요.</div>'}</div></div>
   <div class="sec"><div class="sec-h"><h2>우리 회사 장비 ${devs.length}대</h2></div>${devs.map(d=>devCard(d,false)).join('')||'<div class="empty">설치된 장비가 없어요.</div>'}</div>
+  ${isClientAdmin()?`<div class="sec"><div class="sec-h"><h2>직원 계정</h2></div><div class="list">${S.profiles.filter(p=>p.client_id===cid).map(p=>`<div class="item"><div class="main"><div class="t">${esc(p.display_name||'(이름 없음)')} ${p.client_role==='admin'?'<span class="pill go">회사 관리자</span>':'<span class="pill">일반 직원</span>'}${p.active===false?' <span class="pill new">사용 중지</span>':''}</div><div class="m">가입 ${dt(p.created_at)}</div></div>
+    <div class="acts">${p.id===me.id?'<span style="font-size:12px;color:var(--muted)">본인</span>':`${roleSelect(p)}<button class="btn sm ${p.active===false?'':'danger'}" data-act="acc-active" data-id="${p.id}" data-v="${p.active===false?'1':'0'}">${p.active===false?'사용 재개':'사용 중지'}</button>`}</div></div>`).join('')}</div>
+    <div class="note">직원이 사이트에서 [고객사 계정 만들기]로 가입하면 이 목록에 나타나요. 일반 직원에게는 요금 정보가 보이지 않아요.</div></div>`:''}
   <div class="sec"><div class="sec-h"><h2>다른 서비스도 필요하세요?</h2></div><div class="cats">${S.cats.filter(x=>x.key!=='print_rental'&&x.active).map(x=>`<button class="cat" data-act="p-req" data-id="${x.key}"><div class="ic">${ICONS[x.key]||'📦'}</div><div class="n">${esc(x.name)}</div><div class="d">문의하기</div></button>`).join('')}</div>
   ${reqs.length?`<div class="list" style="margin-top:12px">${reqs.map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))} <span class="pill ${r.status==='접수'?'new':r.status==='상담중'?'go':'done'}">${esc(r.status)}</span></div><div class="m">${esc(r.detail)}</div></div></div>`).join('')}</div>`:''}</div>`;
 }
@@ -678,6 +707,15 @@ function docForm(cid,doc){
       }
     },{submit:doc?'저장':'올리기'});
 }
+function qrView(did){
+  const d=dev(did);if(!d)return;
+  const url=location.origin+location.pathname+'#device='+did;
+  openView(`${d.model} QR 코드`,`<p class="sub" style="margin-bottom:12px">복합기 옆에 붙여 두면 직원이 휴대폰으로 찍어 토너 상태를 보고 고장 신고를 할 수 있어요. 로그인하면 이 장비 화면이 바로 열려요.</p>
+  <div style="text-align:center"><img id="qrImg" alt="QR 코드" style="width:220px;height:220px;background:#fff;padding:8px;border-radius:12px"></div>
+  <div class="token" style="margin-top:10px">${esc(url)}</div>
+  <div class="row-end"><button class="btn sm" data-act="copy" data-v="${esc(url)}">주소 복사</button><button class="btn sm" onclick="window.print()">인쇄</button></div>`);
+  if(window.QRCode){QRCode.toDataURL(url,{width:440,margin:1},(e,u)=>{const img=$('#qrImg');if(img&&u)img.src=u})}
+}
 function agentsView(cid){
   const list=S.agents.filter(a=>a.client_id===cid);
   openView(`${cname(cid)} 수집 토큰`,`<p class="sub" style="margin-bottom:12px">고객사 PC의 수집 프로그램에 이 토큰을 넣으면 카운터와 토너 잔량이 자동으로 올라와요. 토큰은 비밀번호처럼 관리하세요.</p>
@@ -729,6 +767,12 @@ document.addEventListener('click',async e=>{
     case'rq':await q(sb.from('service_requests').update({status:v}).eq('id',id));await load();break;
     case'p-ticket':ticketForm(null,true);break;
     case'p-req':reqForm(id);break;
+    case'qr':qrView(id);break;
+    case'portal-all':ui.deviceView=null;history.replaceState(null,'',location.pathname);render();break;
+    case'acc-active':await q(sb.from('profiles').update({active:v==='1'}).eq('id',id));toast(v==='1'?'사용을 재개했어요':'사용을 중지했어요');await load();break;
+    case'acc-del':{const pf=S.profiles.find(x=>x.id===id);
+      if(confirm(`${(pf&&pf.display_name)||'이 계정'}을(를) 완전히 삭제할까요? 로그인 계정까지 지워지고 되돌릴 수 없어요.`)){
+        await q(sb.rpc('delete_user',{p_id:id}));toast('삭제했어요');await load()}break}
     case'docs':docsView(id);break;
     case'doc-add':docForm(id);break;
     case'doc-edit':{const d=S.docs.find(x=>x.id===id);if(d)docForm(d.client_id,d);break}
@@ -746,6 +790,7 @@ document.addEventListener('change',async e=>{
   if(e.target.id==='monthPick'){ui.month=e.target.value||thisMonth;render()}
   if(e.target.id==='devFilter'){ui.devFilter=e.target.value;render()}
   if(e.target.id==='portalClient'){ui.portalClient=e.target.value;render()}
+  if(e.target.dataset.role){try{await q(sb.from('profiles').update({client_role:e.target.value}).eq('id',e.target.dataset.role));toast('권한을 바꿨어요');await load()}catch(err){toast(errMsg(err))}}
   if(e.target.dataset.link){try{await q(sb.from('profiles').update({client_id:e.target.value||null}).eq('id',e.target.dataset.link));toast('연결했어요');await load()}catch(err){toast(errMsg(err))}}
 });
 function fmtYmd(v){const d=(v||'').replace(/[^0-9]/g,'').slice(0,8);
