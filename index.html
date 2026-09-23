@@ -644,7 +644,7 @@ function reqForm(cat){
   openForm(`${catName(cat)} 문의`,[{k:'detail',label:'필요한 내용',type:'textarea',req:true,ph:'일정, 규모, 예산 등을 적어 주세요'},{k:'phone',label:'연락받을 번호',type:'tel'}],{},
     async x=>{await q(sb.from('service_requests').insert({...x,category:cat,client_id:ui.portalClient,status:'접수'}))},{submit:'문의 보내기'});
 }
-const DOC_CATS=['렌탈계약서','CMS이체신청서','사업자등록증','견적서','인수인계확인서','기타'];
+const DOC_CATS=['렌탈계약서','CMS이체신청서','통장사본','사업자등록증','견적서','인수인계확인서','기타'];
 function docsView(cid){
   const list=S.docs.filter(d=>d.client_id===cid);
   openView(`${cname(cid)} 서류함`,`<p class="sub" style="margin-bottom:12px">계약서, CMS 이체신청서 등을 보관해요. PDF나 사진으로 올리면 언제든 다시 열어볼 수 있어요.</p>
