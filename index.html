@@ -154,8 +154,8 @@ tr.sum td{font-weight:700;border-bottom:0}
 .inv .tot{display:flex;justify-content:space-between;font-size:18px;font-weight:700;margin-top:10px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-.login{max-width:380px;margin:8vh auto 0;padding:0 16px}
-.login .sec{padding:22px}
+
+
 .login h1{margin-bottom:6px}
 .login .switch{margin-top:14px;font-size:14px;color:var(--muted);text-align:center}
 .login .switch button{border:0;background:none;color:var(--cyan);font-weight:600;cursor:pointer;padding:0}
@@ -165,9 +165,9 @@ tr.sum td{font-weight:700;border-bottom:0}
 
 /* ===== 시안 F · 밝은 화면 + 남색 왼쪽 메뉴 ===== */
 header.top{background:var(--navy);border-bottom:0}
-.brand{color:#fff;font-size:17px;letter-spacing:-.035em;white-space:nowrap;overflow:hidden;min-width:0}
-.brand .cmyk{grid-template-columns:repeat(4,6px);gap:2px}
-.brand .cmyk i{width:6px;height:19px;border-radius:2px}
+header .brand{color:#fff;font-size:17px;letter-spacing:-.035em;white-space:nowrap;overflow:hidden;min-width:0}
+header .brand .cmyk{grid-template-columns:repeat(4,6px);gap:2px}
+header .brand .cmyk i{width:6px;height:19px;border-radius:2px}
 .who{color:#9CB2D4}
 header .btn.ghost{color:#9CB2D4;border-color:transparent;background:none}
 header .mode{background:var(--navyDark)}
@@ -181,7 +181,7 @@ nav.tabs button[aria-current="true"]{background:#2E5C9A;color:#fff;font-weight:7
   #banner{grid-column:1/-1}
   header.top{grid-column:1;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:0}
   .bar{display:contents}
-  .brand{order:1;height:68px;margin:0;padding:0 14px;background:var(--navyDark);justify-content:center;gap:9px}
+  header .brand{order:1;height:68px;margin:0;padding:0 14px;background:var(--navyDark);justify-content:center;gap:9px}
   header .mode{order:2;margin:12px 12px 0!important;border-radius:9px}
   header .mode button{flex:1;padding:8px 0;border-radius:7px}
   nav.tabs{order:3;flex:1 1 auto;min-height:0;flex-direction:column;gap:3px;padding:12px;margin:0;max-width:none;overflow-y:auto;overflow-x:hidden}
@@ -189,10 +189,12 @@ nav.tabs button[aria-current="true"]{background:#2E5C9A;color:#fff;font-weight:7
   header .who{order:4;margin:0!important;padding:14px 18px 0;max-width:none;white-space:normal;font-size:14px;border-top:1px solid var(--navyLine)}
   header .btn.ghost{order:5;align-self:flex-start;margin:6px 14px 18px;padding:0 4px;font-size:14px;font-weight:700}
   main{padding:26px 28px 64px;max-width:none;margin:0}
+  body:has(#top[hidden]) main{padding:0}
 }
 @media (max-width:899px){
+  #top[hidden]+main{padding:0}
   .bar{flex-wrap:wrap;gap:10px;padding:11px 14px}
-  .brand{flex:1 1 100%;font-size:17px}
+  header .brand{flex:1 1 100%;font-size:17px}
   header .mode{margin-left:0!important}
   header .mode button{white-space:nowrap;padding:7px 14px}
   header .who{margin-left:auto;font-size:13px}
@@ -215,6 +217,36 @@ th{font-weight:700;color:#2B4A76;font-size:14px}
 .tn-cell.low{--cellbg:#FFFBF0;border-color:var(--yellow)}
 .tn-cell.out{--cellbg:#FFF4F8;border-color:var(--magenta)}
 .tn-ring span{background:var(--cellbg)}
+
+/* 로그인 화면 */
+.login{max-width:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr)}
+.login-hero{background:var(--navy);color:#fff;padding:44px 40px}
+.login-hero .brand{color:#fff;font-size:20px;white-space:normal}
+.login-hero .cmyk{grid-template-columns:repeat(4,9px);gap:3px}
+.login-hero .cmyk i{width:9px;height:24px;border-radius:3px}
+.hero-t{font-size:38px;font-weight:700;letter-spacing:-.035em;line-height:1.22;margin:34px 0 0}
+.hero-d{font-size:17px;color:#A9C0E2;line-height:1.65;margin:14px 0 0}
+.hero-list{margin-top:30px;display:flex;flex-direction:column;gap:13px}
+.hero-i{display:flex;align-items:center;gap:13px}
+.hero-i .ic{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:11px;background:#22375E;font-size:18px;flex:none}
+.hero-i b{display:block;font-size:17px;font-weight:700}
+.hero-i em{display:block;margin-top:2px;font-size:14px;color:#A9C0E2;font-style:normal}
+.hero-f{margin-top:32px;font-size:14px;color:#7E96BC;line-height:1.6}
+.login-form{display:flex;align-items:center;justify-content:center;padding:36px 20px}
+.login-form .sec{width:100%;max-width:400px;padding:26px 24px}
+.login-form .btn.primary{padding:13px;font-size:18px;border-radius:11px}
+@media (min-width:900px){
+  .login{grid-template-columns:minmax(0,46%) minmax(0,1fr);min-height:100vh}
+  .login-hero{display:flex;flex-direction:column;justify-content:center;padding:48px 52px}
+  .hero-t{font-size:42px}
+}
+@media (max-width:899px){
+  .login-hero{padding:28px 20px}
+  .hero-t{font-size:30px;margin-top:22px}
+  .hero-d{font-size:16px}
+  .hero-list{margin-top:22px;gap:11px}
+  .hero-f{margin-top:24px}
+}
 /* 제목줄 + 요금 블록 */
 .phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
 .phead .l{flex:1 1 300px;min-width:0}
@@ -232,7 +264,7 @@ th{font-weight:700;color:#2B4A76;font-size:14px}
 <div id="banner"></div>
 <header class="top" id="top" hidden>
   <div class="bar">
-    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span><span style="font-size:11px;color:#7E96BC;font-weight:500;margin-left:6px">v21</span></div>
+    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span><span style="font-size:11px;color:#7E96BC;font-weight:500;margin-left:6px">v22</span></div>
     <div class="mode" role="group" aria-label="화면 전환" id="modeSwitch" hidden>
       <button data-mode="admin" aria-pressed="true">관리자</button>
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
@@ -352,9 +384,20 @@ function errMsg(e){
 function showLogin(msg=''){
   $('#top').hidden=true;
   const up=ui.authMode==='signup';
-  $('#app').innerHTML=`<div class="login"><div class="sec">
-    <div class="brand" style="margin-bottom:14px"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:var(--ink)"></i></span>주식회사 공정컴퍼니 MPS 관리센터</div>
-    <h1>${up?'고객사 계정 만들기':'로그인'} <span style="font-size:12px;color:var(--muted);font-weight:500">v21</span></h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
+  const PITCH=[['\u{1F3A8}','토너 잔량 자동 확인','복합기에서 매시간 자동으로 올라와요'],
+    ['\u{1F4E0}','팩스 수신함','팩스가 오면 새로고침 없이 바로 보여요'],
+    ['\u{1F9FE}','이번 달 사용량과 요금','흑백·컬러 장수와 초과금을 자동 계산해요'],
+    ['\u{1F6E0}\uFE0F','원격지원 요청','문제가 생기면 화면에서 바로 요청하세요']];
+  $('#app').innerHTML=`<div class="login">
+    <div class="login-hero">
+      <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span>주식회사 공정컴퍼니</div>
+      <h2 class="hero-t">복합기 사용량과<br>팩스를 한곳에서</h2>
+      <p class="hero-d">토너 잔량, 이번 달 출력 장수, 팩스 수신함까지<br>로그인 한 번으로 바로 확인하세요.</p>
+      <div class="hero-list">${PITCH.map(([i,t,d])=>`<div class="hero-i"><span class="ic">${i}</span><span><b>${t}</b><em>${d}</em></span></div>`).join('')}</div>
+      <div class="hero-f">경기도 시흥시 · 031-431-7014<br>복합기 렌탈 · 인쇄 · 인테리어 · 사무실가구 · 이사</div>
+    </div>
+    <div class="login-form"><div class="sec">
+    <h1>${up?'고객사 계정 만들기':'로그인'} <span style="font-size:12px;color:var(--muted);font-weight:500">v22</span></h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
     ${msg?`<div class="note" style="margin:0 0 12px">${esc(msg)}</div>`:''}
     <form id="authForm">
       ${up?'<div class="f"><label for="aName">이름 · 회사명</label><input id="aName" required placeholder="예: 홍길동 (한빛세무회계)"></div>':''}
@@ -363,7 +406,8 @@ function showLogin(msg=''){
       <button class="btn primary" style="width:100%;padding:10px" type="submit">${up?'계정 만들기':'로그인'}</button>
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
-  </div></div>`;
+    ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
+  </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
     const email=$('#aEmail').value.trim(),password=$('#aPw').value;
