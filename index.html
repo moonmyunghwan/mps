@@ -277,6 +277,13 @@ header .brand{justify-content:flex-start}
   header .ver{order:6;margin:0 0 14px 18px}
 }
 @media (max-width:899px){header .ver{align-self:center}}
+
+/* 메뉴 아이콘 */
+nav.tabs button{display:flex;align-items:center;gap:10px}
+nav.tabs .ti{font-size:17px;flex:none;line-height:1}
+nav.tabs .tn{flex:1 1 auto;text-align:left;white-space:nowrap}
+nav.tabs .dot{margin-left:auto;flex:none}
+@media (max-width:899px){nav.tabs .tn{flex:none}nav.tabs .dot{margin-left:0}}
 /* 제목줄 + 요금 블록 */
 .phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
 .phead .l{flex:1 1 300px;min-width:0}
@@ -300,7 +307,7 @@ header .brand{justify-content:flex-start}
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
     </div>
     <span class="who" id="who" style="margin-left:auto"></span>
-    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v27</span>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v29</span>
   </div>
   <nav class="tabs" id="tabs"></nav>
 </header>
@@ -437,7 +444,7 @@ function showLogin(msg=''){
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
     ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
-    <div class="ver-f">v27</div>
+    <div class="ver-f">v29</div>
   </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
@@ -493,13 +500,19 @@ async function boot(){
 }
 
 /* ---------- 화면 ---------- */
-const ADMIN_TABS=[['home','현황'],['clients','거래처'],['devices','장비'],['billing','검침·청구'],['toner','토너'],['support','원격지원'],['fax','팩스'],['platform','서비스 확장'],['accounts','계정']];
+const ADMIN_TABS=[['home','현황','\u{1F4CA}'],['clients','거래처','\u{1F3E2}'],['devices','장비','\u{1F5A8}\uFE0F'],['billing','검침·청구','\u{1F9FE}'],['toner','토너','\u{1F3A8}'],['support','원격지원','\u{1F6E0}\uFE0F'],['fax','팩스','\u{1F4E0}'],['platform','서비스 확장','\u{1F9E9}'],['accounts','계정','\u{1F464}']];
 function renderTabs(){
   const nav=$('#tabs');
   if(ui.mode==='portal'){nav.innerHTML='';nav.hidden=true;return}
   nav.hidden=false;
-  const badge={toner:S.orders.filter(o=>o.status==='요청').length,support:S.tickets.filter(t=>t.status==='접수').length,fax:0,platform:S.requests.filter(r=>r.status==='접수').length,accounts:S.profiles.filter(p=>p.role==='client'&&!p.client_id).length};
-  nav.innerHTML=ADMIN_TABS.map(([k,n])=>`<button data-tab="${k}" aria-current="${ui.tab===k}">${n}${badge[k]?`<span class="dot">${badge[k]}</span>`:''}</button>`).join('');
+  const badge={
+    toner:S.devices.filter(d=>lowKeys(d).length||S.orders.some(o=>o.device_id===d.id&&o.status==='요청')).length,
+    support:S.tickets.filter(t=>t.status==='접수').length,
+    fax:S.faxes.filter(f=>!f.is_read&&f.folder!=='trash').length,
+    billing:S.devices.filter(d=>!bill(d.id,thisMonth)).length,
+    platform:S.requests.filter(r=>r.status==='접수').length,
+    accounts:S.profiles.filter(p=>p.role==='client'&&!p.client_id).length};
+  nav.innerHTML=ADMIN_TABS.map(([k,n,ic])=>`<button data-tab="${k}" aria-current="${ui.tab===k}"><span class="ti" aria-hidden="true">${ic}</span><span class="tn">${n}</span>${badge[k]?`<span class="dot">${badge[k]}</span>`:''}</button>`).join('');
 }
 function render(){
   if(!me)return;
@@ -724,7 +737,10 @@ function vPortal(){
   let mono=0,color=0;b.rows.forEach(r=>{if(r.u){mono+=+r.u.used_mono;color+=+r.u.used_color}});
   const unread=faxes.filter(f=>!f.is_read).length;
   const inclM=devs.reduce((a,d)=>a+(+d.incl_mono||0),0),inclC=devs.reduce((a,d)=>a+(+d.incl_color||0),0);
-  let ovM=0,ovC=0;b.rows.forEach(r=>{if(r.u){ovM+=+r.u.over_mono;ovC+=+r.u.over_color}});
+  let ovM=0,ovC=0,curM=0,curC=0;b.rows.forEach(r=>{if(r.u){ovM+=+r.u.over_mono;ovC+=+r.u.over_color;curM+=+r.u.mono;curC+=+r.u.color}});
+  const firstM=b.rows.length>0&&b.rows.every(r=>r.u&&r.u.first_reading);
+  const noteM=firstM?`설치 첫 달<br>현재 카운터 ${nf(curM)}장`:`무료 ${nf(inclM)}장<br>${ovM?'초과 '+nf(ovM)+'장':'초과 없음'}`;
+  const noteC=firstM?`설치 첫 달<br>현재 카운터 ${nf(curC)}장`:`무료 ${nf(inclC)}장<br>${ovC?'초과 '+nf(ovC)+'장':'초과 없음'}`;
   return `${isAdmin()?`<div class="toolbar"><select id="portalClient" aria-label="고객사 선택">${S.clients.map(x=>`<option value="${x.id}" ${x.id===cid?'selected':''}>${esc(x.name)}</option>`).join('')}</select><span style="font-size:13px;color:var(--muted)">고객사가 로그인하면 보는 화면이에요</span></div>`:''}
   <div class="phead"><div class="l"><h1>${esc(c.name)}</h1><p class="sub">${mLabel(thisMonth)} 사용 현황</p></div>
   ${canSeeMoney()?`<div class="r"><div class="k">이번 달 예상 요금</div><div class="v num">${won(b.total)}</div><div class="n">VAT 포함 · 월말 검침 후 확정</div></div>`:''}</div>
@@ -735,7 +751,8 @@ function vPortal(){
     <div class="sec"><div class="sec-h"><h2>팩스 수신함</h2>${unread?`<span class="pill new">새 팩스 ${unread}</span>`:''}</div>${faxBox(faxes,false)}</div>
    </div>
    <div class="pcol">
-    ${meters(mono,color,'장',' col',`무료 ${nf(inclM)}장<br>${ovM?'초과 '+nf(ovM)+'장':'초과 없음'}`,`무료 ${nf(inclC)}장<br>${ovC?'초과 '+nf(ovC)+'장':'초과 없음'}`)}
+    ${meters(mono,color,'장',' col',noteM,noteC)}
+    ${firstM?'<div class="note" style="margin:0">설치한 달이라 사용량이 0으로 나와요. 사용량은 <b>이번 달 카운터 − 지난달 카운터</b>로 계산하기 때문에, 다음 달 1일부터 실제 출력 장수가 쌓입니다. 카운터 자체는 매시간 자동으로 올라오고 있어요.</div>':''}
     <div class="sec"><div class="sec-h"><h2>원격지원</h2></div><button class="btn primary" style="width:100%;padding:11px" data-act="p-ticket">지원 요청하기</button><div class="list" style="margin-top:13px;border-top:1px solid var(--line);padding-top:4px">${tks.length?tks.slice(0,4).map(tkItem).join(''):'<div class="empty">프린터에 문제가 있으면 요청해 주세요. 담당자가 원격으로 확인해 드려요.</div>'}</div></div>
     <div class="sec"><div class="sec-h"><h2>다른 서비스도 필요하세요?</h2></div><div class="cats">${S.cats.filter(x=>x.key!=='print_rental'&&x.active).map(x=>`<button class="cat" data-act="p-req" data-id="${x.key}"><div class="ic">${ICONS[x.key]||'📦'}</div><div class="n">${esc(x.name)}</div><div class="d">문의하기</div></button>`).join('')}</div>
     ${reqs.length?`<div class="list" style="margin-top:12px">${reqs.map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))} <span class="pill ${r.status==='접수'?'new':r.status==='상담중'?'go':'done'}">${esc(r.status)}</span></div><div class="m">${esc(r.detail)}</div></div></div>`).join('')}</div>`:''}</div>
