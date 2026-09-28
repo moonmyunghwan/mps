@@ -258,6 +258,15 @@ th{font-weight:700;color:#2B4A76;font-size:14px}
 .sec>.toner:first-child{margin-top:0;padding-top:0;border-top:0}
 .devt{font-weight:700;font-size:18px;margin-top:14px}
 .devt span{color:var(--muted);font-weight:500;font-size:15px}
+
+/* 가운데 정렬 */
+.cats{gap:9px;grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+.cat{text-align:center;background:#F7FAFD;border:1px solid var(--line);border-radius:10px;padding:13px 8px}
+.cat .ic{font-size:22px;line-height:1.2}
+.cat .n{margin-top:6px;font-size:15px;font-weight:700;color:#16294A}
+.cat .d{display:none}
+.faxtable th,.faxtable td{text-align:center;vertical-align:middle}
+.faxtable td input[type=text],.faxtable td input:not([type]){text-align:center}
 /* 제목줄 + 요금 블록 */
 .phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
 .phead .l{flex:1 1 300px;min-width:0}
@@ -275,7 +284,7 @@ th{font-weight:700;color:#2B4A76;font-size:14px}
 <div id="banner"></div>
 <header class="top" id="top" hidden>
   <div class="bar">
-    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span><span style="font-size:11px;color:#7E96BC;font-weight:500;margin-left:6px">v23</span></div>
+    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span><span style="font-size:11px;color:#7E96BC;font-weight:500;margin-left:6px">v26</span></div>
     <div class="mode" role="group" aria-label="화면 전환" id="modeSwitch" hidden>
       <button data-mode="admin" aria-pressed="true">관리자</button>
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
@@ -408,7 +417,7 @@ function showLogin(msg=''){
       <div class="hero-f">경기도 시흥시 · 031-431-7014<br>복합기 렌탈 · 인쇄 · 인테리어 · 사무실가구 · 이사</div>
     </div>
     <div class="login-form"><div class="sec">
-    <h1>${up?'고객사 계정 만들기':'로그인'} <span style="font-size:12px;color:var(--muted);font-weight:500">v23</span></h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
+    <h1>${up?'고객사 계정 만들기':'로그인'} <span style="font-size:12px;color:var(--muted);font-weight:500">v26</span></h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
     ${msg?`<div class="note" style="margin:0 0 12px">${esc(msg)}</div>`:''}
     <form id="authForm">
       ${up?'<div class="f"><label for="aName">이름 · 회사명</label><input id="aName" required placeholder="예: 홍길동 (한빛세무회계)"></div>':''}
@@ -716,7 +725,7 @@ function vPortal(){
    </div>
    <div class="pcol">
     ${meters(mono,color,'장',' col',`무료 ${nf(inclM)}장<br>${ovM?'초과 '+nf(ovM)+'장':'초과 없음'}`,`무료 ${nf(inclC)}장<br>${ovC?'초과 '+nf(ovC)+'장':'초과 없음'}`)}
-    <div class="sec"><div class="sec-h"><h2>원격지원</h2></div><button class="btn primary" style="width:100%;padding:11px" data-act="p-ticket">지원 요청하기</button><div class="list">${tks.length?tks.slice(0,4).map(tkItem).join(''):'<div class="empty">프린터에 문제가 있으면 요청해 주세요. 담당자가 원격으로 확인해 드려요.</div>'}</div></div>
+    <div class="sec"><div class="sec-h"><h2>원격지원</h2></div><button class="btn primary" style="width:100%;padding:11px" data-act="p-ticket">지원 요청하기</button><div class="list" style="margin-top:13px;border-top:1px solid var(--line);padding-top:4px">${tks.length?tks.slice(0,4).map(tkItem).join(''):'<div class="empty">프린터에 문제가 있으면 요청해 주세요. 담당자가 원격으로 확인해 드려요.</div>'}</div></div>
     <div class="sec"><div class="sec-h"><h2>다른 서비스도 필요하세요?</h2></div><div class="cats">${S.cats.filter(x=>x.key!=='print_rental'&&x.active).map(x=>`<button class="cat" data-act="p-req" data-id="${x.key}"><div class="ic">${ICONS[x.key]||'📦'}</div><div class="n">${esc(x.name)}</div><div class="d">문의하기</div></button>`).join('')}</div>
     ${reqs.length?`<div class="list" style="margin-top:12px">${reqs.map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))} <span class="pill ${r.status==='접수'?'new':r.status==='상담중'?'go':'done'}">${esc(r.status)}</span></div><div class="m">${esc(r.detail)}</div></div></div>`).join('')}</div>`:''}</div>
    </div>
