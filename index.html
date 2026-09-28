@@ -284,6 +284,15 @@ nav.tabs .ti{font-size:17px;flex:none;line-height:1}
 nav.tabs .tn{flex:1 1 auto;text-align:left;white-space:nowrap}
 nav.tabs .dot{margin-left:auto;flex:none}
 @media (max-width:899px){nav.tabs .tn{flex:none}nav.tabs .dot{margin-left:0}}
+
+/* 토너 고르기 */
+button.tn-cell{position:relative;cursor:pointer;font:inherit;color:inherit;width:100%}
+button.tn-cell:hover{border-color:#9DBAD6}
+.tn-cell.sel{border-color:var(--key);border-width:3px;background:#EEF4FB;--cellbg:#EEF4FB;box-shadow:0 0 0 3px rgba(31,78,140,.12)}
+.tn-chk{position:absolute;top:9px;right:9px;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);background:var(--sheet);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;color:#fff}
+.tn-cell.sel .tn-chk{background:var(--key);border-color:var(--key)}
+.tn-hint{margin-top:12px;font-size:14px;color:var(--muted);text-align:center}
+.tn-hint b{color:var(--key)}
 /* 제목줄 + 요금 블록 */
 .phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
 .phead .l{flex:1 1 300px;min-width:0}
@@ -307,7 +316,7 @@ nav.tabs .dot{margin-left:auto;flex:none}
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
     </div>
     <span class="who" id="who" style="margin-left:auto"></span>
-    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v29</span>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v30</span>
   </div>
   <nav class="tabs" id="tabs"></nav>
 </header>
@@ -349,7 +358,7 @@ const LOW=20,OUT=5;
 
 let me=null;
 const S={clients:[],devices:[],bills:[],tickets:[],faxes:[],orders:[],requests:[],cats:[],agents:[],profiles:[],docs:[],mails:[]};
-const ui={mode:'admin',tab:'home',month:thisMonth,portalClient:null,devFilter:'',authMode:'login',deviceView:null,faxFolder:'inbox',faxQ:'',faxSel:new Set()};
+const ui={mode:'admin',tab:'home',month:thisMonth,portalClient:null,devFilter:'',authMode:'login',deviceView:null,faxFolder:'inbox',faxQ:'',faxSel:new Set(),tsel:new Set()};
 
 const isAdmin=()=>me&&me.role==='admin';
 const isClientAdmin=()=>me&&me.role==='client'&&me.client_role==='admin';
@@ -444,7 +453,7 @@ function showLogin(msg=''){
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
     ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
-    <div class="ver-f">v29</div>
+    <div class="ver-f">v30</div>
   </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
@@ -574,19 +583,24 @@ function tonerBlock(d,portal){
   const u=lastUsage(d.id);const lk=lowKeys(d);const has=tonerKeys(d).some(k=>tLevel(d,k)!=null);
   const pend=S.orders.find(o=>o.device_id===d.id&&o.status!=='교체완료');
   const keys=tonerKeys(d);
+  const pick=portal&&!pend;
+  const nsel=keys.filter(k=>ui.tsel.has(d.id+':'+k)).length;
   const cells=keys.map(k=>{const v=tLevel(d,k),sp=tSpec(d,k);const col=TC[k].c;let est='';
     if(v!=null&&sp){const pages=Math.round(sp.yield*v/100);const monthly=u?(k==='K'?+u.used_mono+ +u.used_color:+u.used_color):0;
       est=`약 ${nf(pages)}장 남음`+(monthly>0?`<br>약 ${Math.round(pages/monthly*30)}일 사용 가능`:'')}
     else if(v!=null&&v<=OUT)est='교체가 필요해요';
     const pct=v==null?0:v;
-    return `<div class="tn-cell ${tStat(v)}">
+    const on=ui.tsel.has(d.id+':'+k);
+    const tag=pick?'button':'div';
+    return `<${tag} class="tn-cell ${tStat(v)}${on?' sel':''}"${pick?` type="button" data-act="tn-pick" data-id="${d.id}" data-k="${k}" aria-pressed="${on}"`:''}>
+      ${pick?`<span class="tn-chk" aria-hidden="true">${on?'✓':''}</span>`:''}
       <div class="tn-ring" role="img" aria-label="${TC[k].n} 토너 ${v??'미확인'}%" style="background:conic-gradient(${col} 0% ${pct}%, var(--line) ${pct}% 100%)"><span style="color:${v==null?'var(--muted)':col}">${v==null?'-':v+'%'}</span></div>
       <div class="tn-name">${TC[k].n}</div>
-      <div class="tn-code">${sp?esc(sp.code):''}${sp&&est?'<br>':''}${est}</div></div>`}).join('');
+      <div class="tn-code">${sp?esc(sp.code):''}${sp&&est?'<br>':''}${est}</div></${tag}>`}).join('');
   const rows=`<div class="tn-grid" style="grid-template-columns:repeat(${keys.length},minmax(0,1fr))">${cells}</div>`;
   const st=pend?`<span class="pill go">토너 ${esc(pend.status)}</span>`:lk.some(k=>tLevel(d,k)<=OUT)?'<span class="pill new">교체 필요</span>':lk.length?'<span class="pill warn">토너 부족</span>':has?'<span class="pill done">정상</span>':'';
   return `<div class="toner"><div class="toner-h"><b>토너 잔량</b>${st}<span class="when">${d.toner_updated_at?dt(d.toner_updated_at)+' '+esc(d.toner_updated_by||'')+' 확인':'아직 확인 전'}</span>
-  <div class="right"><button class="btn sm" data-act="toner-in" data-id="${d.id}">잔량 입력</button>${portal&&!pend?`<button class="btn sm ${lk.length?'primary':''}" data-act="toner-req" data-id="${d.id}">토너 요청</button>`:''}</div></div>${rows}</div>`;
+  <div class="right"><button class="btn sm" data-act="toner-in" data-id="${d.id}">잔량 입력</button>${pick?`<button class="btn sm ${nsel||lk.length?'primary':''}" data-act="toner-req" data-id="${d.id}">토너 요청${nsel?' '+nsel:''}</button>`:''}</div></div>${rows}${pick?`<div class="tn-hint">${nsel?`<b>${keys.filter(k=>ui.tsel.has(d.id+':'+k)).map(k=>TC[k].n).join(', ')}</b> 선택됨 · [토너 요청]을 누르세요`:'필요한 토너를 눌러 고르세요 (여러 개 가능)'}</div>`:''}</div>`;
 }
 function devCard(d,admin=true){
   const last=lastBill(d.id);
@@ -931,11 +945,19 @@ function tonerForm(did){
 function tonerReqForm(did,portal){
   let d=did?dev(did):null;const fields=[];
   if(!d){const opts=S.devices.map(x=>[x.id,cname(x.client_id)+' · '+x.model]);if(!opts.length){toast('등록된 장비가 없어요');return}fields.push({k:'device_id',label:'장비',type:'select',options:opts});d=dev(opts[0][0])}
-  fields.push({k:'colors',label:'필요한 토너',type:'checks',options:tonerKeys(d).length===1?[['K','검정']]:['K','C','M','Y'].map(k=>[k,TC[k].n])},{k:'memo',label:'메모',ph:'예: 오늘 중 배송 부탁드려요'});
-  const pre=lowKeys(d);
-  openForm('토너 요청',fields,{device_id:d.id,colors:pre.length?pre:['K']},async x=>{
-    const dd=dev(x.device_id||d.id);if(!x.colors.length)throw uerr('토너 색을 하나 이상 선택하세요.');
-    await q(sb.from('toner_orders').insert({device_id:dd.id,client_id:dd.client_id,colors:x.colors,memo:x.memo,status:'요청',requested_by:isAdmin()?'관리자':'고객사'}))},{submit:portal?'요청 보내기':'저장'});
+  let pre=tonerKeys(d).filter(k=>ui.tsel.has(d.id+':'+k));
+  if(portal){
+    if(!pre.length){toast('필요한 토너를 먼저 눌러 고르세요');return}
+    fields.push({k:'memo',label:'메모 (선택)',ph:'예: 오늘 중 배송 부탁드려요'});
+  }else{
+    fields.push({k:'colors',label:'필요한 토너',type:'checks',options:tonerKeys(d).length===1?[['K','검정']]:['K','C','M','Y'].map(k=>[k,TC[k].n])},{k:'memo',label:'메모',ph:'예: 오늘 중 배송 부탁드려요'});
+    pre=lowKeys(d);if(!pre.length)pre=['K'];
+  }
+  openForm(portal?`토너 요청 · ${pre.map(k=>TC[k].n).join(', ')}`:'토너 요청',fields,{device_id:d.id,colors:pre},async x=>{
+    const dd=dev(x.device_id||d.id);const cols=portal?pre:x.colors;
+    if(!cols.length)throw uerr('토너 색을 하나 이상 선택하세요.');
+    await q(sb.from('toner_orders').insert({device_id:dd.id,client_id:dd.client_id,colors:cols,memo:x.memo,status:'요청',requested_by:isAdmin()?'관리자':'고객사'}));
+    cols.forEach(k=>ui.tsel.delete(dd.id+':'+k))},{submit:portal?'요청 보내기':'저장'});
 }
 function faxForm(){
   if(!S.clients.length){toast('거래처를 먼저 추가하세요');return}
@@ -1055,6 +1077,8 @@ document.addEventListener('click',async e=>{
     case'tk':await q(sb.from('tickets').update({status:v,updated_at:new Date().toISOString()}).eq('id',id));toast(v==='완료'?'완료 처리했어요':'접수 확인했어요');await load();break;
     case'tk-code':closeSheet();openForm('원격 접속 코드',[{k:'session_code',label:'접속 코드',req:true}],S.tickets.find(x=>x.id===id)||{},async x=>{await q(sb.from('tickets').update({session_code:x.session_code,status:'진행',updated_at:new Date().toISOString()}).eq('id',id))});break;
     case'toner-in':tonerForm(id);break;
+    case'tn-pick':{const key=id+':'+e.target.closest('[data-act]').dataset.k;
+      ui.tsel.has(key)?ui.tsel.delete(key):ui.tsel.add(key);render();break}
     case'toner-req':tonerReqForm(id,true);break;
     case'toner-req-admin':tonerReqForm(null,false);break;
     case'ord':{const o=S.orders.find(x=>x.id===id);await q(sb.from('toner_orders').update({status:v,updated_at:new Date().toISOString()}).eq('id',id));
