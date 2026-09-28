@@ -277,6 +277,32 @@ header .brand{justify-content:flex-start}
   header .ver{order:6;margin:0 0 14px 18px}
 }
 @media (max-width:899px){header .ver{align-self:center}}
+
+/* 메뉴 아이콘 */
+nav.tabs button{display:flex;align-items:center;gap:10px}
+nav.tabs .ti{font-size:17px;flex:none;line-height:1}
+nav.tabs .tn{flex:1 1 auto;text-align:left;white-space:nowrap}
+nav.tabs .dot{margin-left:auto;flex:none}
+@media (max-width:899px){nav.tabs .tn{flex:none}nav.tabs .dot{margin-left:0}}
+
+/* 토너 고르기 */
+button.tn-cell{position:relative;cursor:pointer;font:inherit;color:inherit;width:100%}
+button.tn-cell:hover{border-color:#9DBAD6}
+.tn-cell.sel{border-color:var(--key);border-width:3px;background:#EEF4FB;--cellbg:#EEF4FB;box-shadow:0 0 0 3px rgba(31,78,140,.12)}
+.tn-chk{position:absolute;top:9px;right:9px;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);background:var(--sheet);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;color:#fff}
+.tn-cell.sel .tn-chk{background:var(--key);border-color:var(--key)}
+.tn-hint{margin-top:12px;font-size:14px;color:var(--muted);text-align:center}
+.tn-hint b{color:var(--key)}
+
+
+.pill.fax{background:var(--key);color:#fff}
+.pill.mail{background:var(--chip);color:#2B4A76;border:1px solid #C3D3E6}
+/* 실시간 표시 */
+.btn.danger-solid{background:var(--magenta);border-color:var(--magenta);color:#fff}
+.live{display:inline-flex;align-items:center;gap:7px;background:#E4F5EE;border:1px solid #A9DCC8;border-radius:999px;padding:6px 14px;font-size:14px;font-weight:700;color:#0F6B4B;white-space:nowrap}
+.live i{width:8px;height:8px;border-radius:50%;background:#17A673;display:block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.live i{animation:none}}
 /* 제목줄 + 요금 블록 */
 .phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
 .phead .l{flex:1 1 300px;min-width:0}
@@ -300,7 +326,7 @@ header .brand{justify-content:flex-start}
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
     </div>
     <span class="who" id="who" style="margin-left:auto"></span>
-    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v28</span>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v36</span>
   </div>
   <nav class="tabs" id="tabs"></nav>
 </header>
@@ -342,7 +368,7 @@ const LOW=20,OUT=5;
 
 let me=null;
 const S={clients:[],devices:[],bills:[],tickets:[],faxes:[],orders:[],requests:[],cats:[],agents:[],profiles:[],docs:[],mails:[]};
-const ui={mode:'admin',tab:'home',month:thisMonth,portalClient:null,devFilter:'',authMode:'login',deviceView:null,faxFolder:'inbox',faxQ:'',faxSel:new Set()};
+const ui={mode:'admin',tab:'home',month:thisMonth,portalClient:null,devFilter:'',authMode:'login',deviceView:null,faxFolder:'inbox',faxQ:'',faxSel:new Set(),tsel:new Set()};
 
 const isAdmin=()=>me&&me.role==='admin';
 const isClientAdmin=()=>me&&me.role==='client'&&me.client_role==='admin';
@@ -437,7 +463,7 @@ function showLogin(msg=''){
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
     ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
-    <div class="ver-f">v28</div>
+    <div class="ver-f">v36</div>
   </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
@@ -493,13 +519,19 @@ async function boot(){
 }
 
 /* ---------- 화면 ---------- */
-const ADMIN_TABS=[['home','현황'],['clients','거래처'],['devices','장비'],['billing','검침·청구'],['toner','토너'],['support','원격지원'],['fax','팩스'],['platform','서비스 확장'],['accounts','계정']];
+const ADMIN_TABS=[['home','현황','\u{1F4CA}'],['clients','거래처','\u{1F3E2}'],['devices','장비','\u{1F5A8}\uFE0F'],['billing','검침·청구','\u{1F9FE}'],['toner','토너','\u{1F3A8}'],['support','원격지원','\u{1F6E0}\uFE0F'],['fax','팩스','\u{1F4E0}'],['platform','서비스 확장','\u{1F9E9}'],['accounts','계정','\u{1F464}']];
 function renderTabs(){
   const nav=$('#tabs');
   if(ui.mode==='portal'){nav.innerHTML='';nav.hidden=true;return}
   nav.hidden=false;
-  const badge={toner:S.orders.filter(o=>o.status==='요청').length,support:S.tickets.filter(t=>t.status==='접수').length,fax:0,platform:S.requests.filter(r=>r.status==='접수').length,accounts:S.profiles.filter(p=>p.role==='client'&&!p.client_id).length};
-  nav.innerHTML=ADMIN_TABS.map(([k,n])=>`<button data-tab="${k}" aria-current="${ui.tab===k}">${n}${badge[k]?`<span class="dot">${badge[k]}</span>`:''}</button>`).join('');
+  const badge={
+    toner:S.devices.filter(d=>lowKeys(d).length||S.orders.some(o=>o.device_id===d.id&&o.status==='요청')).length,
+    support:S.tickets.filter(t=>t.status==='접수').length,
+    fax:S.faxes.filter(f=>!f.is_read&&f.folder!=='trash').length,
+    billing:S.devices.filter(d=>!bill(d.id,thisMonth)).length,
+    platform:S.requests.filter(r=>r.status==='접수').length,
+    accounts:S.profiles.filter(p=>p.role==='client'&&!p.client_id).length};
+  nav.innerHTML=ADMIN_TABS.map(([k,n,ic])=>`<button data-tab="${k}" aria-current="${ui.tab===k}"><span class="ti" aria-hidden="true">${ic}</span><span class="tn">${n}</span>${badge[k]?`<span class="dot">${badge[k]}</span>`:''}</button>`).join('');
 }
 function render(){
   if(!me)return;
@@ -561,19 +593,24 @@ function tonerBlock(d,portal){
   const u=lastUsage(d.id);const lk=lowKeys(d);const has=tonerKeys(d).some(k=>tLevel(d,k)!=null);
   const pend=S.orders.find(o=>o.device_id===d.id&&o.status!=='교체완료');
   const keys=tonerKeys(d);
+  const pick=portal&&!pend;
+  const nsel=keys.filter(k=>ui.tsel.has(d.id+':'+k)).length;
   const cells=keys.map(k=>{const v=tLevel(d,k),sp=tSpec(d,k);const col=TC[k].c;let est='';
     if(v!=null&&sp){const pages=Math.round(sp.yield*v/100);const monthly=u?(k==='K'?+u.used_mono+ +u.used_color:+u.used_color):0;
       est=`약 ${nf(pages)}장 남음`+(monthly>0?`<br>약 ${Math.round(pages/monthly*30)}일 사용 가능`:'')}
     else if(v!=null&&v<=OUT)est='교체가 필요해요';
     const pct=v==null?0:v;
-    return `<div class="tn-cell ${tStat(v)}">
+    const on=ui.tsel.has(d.id+':'+k);
+    const tag=pick?'button':'div';
+    return `<${tag} class="tn-cell ${tStat(v)}${on?' sel':''}"${pick?` type="button" data-act="tn-pick" data-id="${d.id}" data-k="${k}" aria-pressed="${on}"`:''}>
+      ${pick?`<span class="tn-chk" aria-hidden="true">${on?'✓':''}</span>`:''}
       <div class="tn-ring" role="img" aria-label="${TC[k].n} 토너 ${v??'미확인'}%" style="background:conic-gradient(${col} 0% ${pct}%, var(--line) ${pct}% 100%)"><span style="color:${v==null?'var(--muted)':col}">${v==null?'-':v+'%'}</span></div>
       <div class="tn-name">${TC[k].n}</div>
-      <div class="tn-code">${sp?esc(sp.code):''}${sp&&est?'<br>':''}${est}</div></div>`}).join('');
+      <div class="tn-code">${sp?esc(sp.code):''}${sp&&est?'<br>':''}${est}</div></${tag}>`}).join('');
   const rows=`<div class="tn-grid" style="grid-template-columns:repeat(${keys.length},minmax(0,1fr))">${cells}</div>`;
   const st=pend?`<span class="pill go">토너 ${esc(pend.status)}</span>`:lk.some(k=>tLevel(d,k)<=OUT)?'<span class="pill new">교체 필요</span>':lk.length?'<span class="pill warn">토너 부족</span>':has?'<span class="pill done">정상</span>':'';
   return `<div class="toner"><div class="toner-h"><b>토너 잔량</b>${st}<span class="when">${d.toner_updated_at?dt(d.toner_updated_at)+' '+esc(d.toner_updated_by||'')+' 확인':'아직 확인 전'}</span>
-  <div class="right"><button class="btn sm" data-act="toner-in" data-id="${d.id}">잔량 입력</button>${portal&&!pend?`<button class="btn sm ${lk.length?'primary':''}" data-act="toner-req" data-id="${d.id}">토너 요청</button>`:''}</div></div>${rows}</div>`;
+  <div class="right"><button class="btn sm" data-act="toner-in" data-id="${d.id}">잔량 입력</button>${pick?`<button class="btn sm ${nsel||lk.length?'primary':''}" data-act="toner-req" data-id="${d.id}">토너 요청${nsel?' '+nsel:''}</button>`:''}</div></div>${rows}${pick?`<div class="tn-hint">${nsel?`<b>${keys.filter(k=>ui.tsel.has(d.id+':'+k)).map(k=>TC[k].n).join(', ')}</b> 선택됨 · [토너 요청]을 누르세요`:'필요한 토너를 눌러 고르세요 (여러 개 가능)'}</div>`:''}</div>`;
 }
 function devCard(d,admin=true){
   const last=lastBill(d.id);
@@ -641,23 +678,32 @@ function faxItem(f,admin){
    :`<button class="btn sm" data-act="fax-move" data-id="${f.id}" data-v="${f.folder==='archive'?'inbox':'archive'}">${f.folder==='archive'?'받은문서로':'보관'}</button><button class="btn sm danger" data-act="fax-move" data-id="${f.id}" data-v="trash">삭제</button>`}
   ${!f.is_read&&!admin?`<button class="btn sm" data-act="fax-read" data-id="${f.id}">확인함</button>`:''}</div></div>`;
 }
+async function markRead(ids){
+  for(let i=0;i<ids.length;i+=8){
+    await Promise.all(ids.slice(i,i+8).map(fid=>sb.rpc('mark_fax_read',{p_id:fid})));
+  }
+}
 function faxBox(list,admin){
   const q=(ui.faxQ||'').trim();
   const fil=list.filter(f=>(f.folder||'inbox')===ui.faxFolder)
-    .filter(f=>!q||[f.title,f.keyword,f.file_name,f.from_number].some(v=>(v||'').includes(q)));
+    .filter(f=>!q||[f.title,f.keyword,f.file_name,f.from_number,f.kind==='email'?'메일':'팩스'].some(v=>(v||'').includes(q)));
   const cnt=k=>list.filter(f=>(f.folder||'inbox')===k).length;
   const sel=ui.faxSel;const n=fil.filter(f=>sel.has(f.id)).length;
   const dis=n?'':'disabled';
   return `<div class="toolbar">
     <div class="mode" style="margin:0">${FOLDERS.map(([k,nm])=>`<button data-act="fax-folder" data-v="${k}" aria-pressed="${ui.faxFolder===k}">${nm} ${cnt(k)}</button>`).join('')}</div>
     <input id="faxQ" value="${esc(ui.faxQ||'')}" placeholder="문서명·검색어·발신번호 검색" style="flex:1;min-width:160px">
-    ${admin?'<button class="btn" data-act="fax-fetch">메일 확인</button><button class="btn primary" data-act="add-fax">팩스 등록</button>':'<button class="btn" data-act="reload">새로고침</button>'}</div>
+    <button class="btn" data-act="fax-fetch">지금 확인</button>
+    ${admin?'<button class="btn primary" data-act="add-fax">팩스 등록</button>':''}
+    ${(()=>{const un=fil.filter(f=>!f.is_read).length;return un?`<button class="btn" data-act="fax-readall">모두 읽음 ${un}</button>`:''})()}
+    <span class="live" title="팩스가 오면 자동으로 올라옵니다"><i></i>실시간</span></div>
   <div class="toolbar" style="margin-bottom:8px">
-    <button class="btn sm" data-act="fax-bulk" data-v="down" ${dis}>다운로드</button>
-    <button class="btn sm" data-act="fax-bulk" data-v="mail" ${dis}>메일발송</button>
-    <button class="btn sm" data-act="fax-bulk" data-v="${ui.faxFolder==='archive'?'inbox':'archive'}" ${dis}>${ui.faxFolder==='archive'?'받은문서로':'보관함으로'}</button>
-    ${ui.faxFolder==='trash'?`<button class="btn sm" data-act="fax-bulk" data-v="inbox" ${dis}>복원</button>${admin?`<button class="btn sm danger" data-act="fax-bulk" data-v="purge" ${dis}>완전 삭제</button>`:''}`
-      :`<button class="btn sm danger" data-act="fax-bulk" data-v="trash" ${dis}>삭제</button>`}
+    ${ui.faxFolder==='trash'?`<button class="btn sm danger" data-act="fax-bulk" data-v="purge" ${dis}>완전 삭제</button><button class="btn sm" data-act="fax-bulk" data-v="inbox" ${dis}>복원</button>`
+      :`<button class="btn sm danger" data-act="fax-bulk" data-v="trash" ${dis}>삭제</button>
+    <button class="btn sm" data-act="fax-bulk" data-v="${ui.faxFolder==='archive'?'inbox':'archive'}" ${dis}>${ui.faxFolder==='archive'?'받은문서로':'보관함으로'}</button>`}
+    <button class="btn sm" data-act="fax-bulk" data-v="read" ${dis}>읽음</button>
+    <button class="btn sm" data-act="fax-bulk" data-v="mail" ${dis}>메일 발송</button>
+    <button class="btn sm primary" data-act="fax-bulk" data-v="down" ${dis}>다운로드</button>
     <span style="font-size:13px;color:var(--muted)">${n?n+'건 선택됨':'문서를 선택하세요'}</span></div>
   <div class="scroll"><table class="faxtable"><thead><tr>
     <th style="width:34px"><input type="checkbox" data-fax-all ${fil.length&&n===fil.length?'checked':''} aria-label="전체 선택"></th>
@@ -665,7 +711,7 @@ function faxBox(list,admin){
     <th>기능</th><th>크기(KB)</th><th>확장</th><th>수신한 날짜</th></tr></thead><tbody>
   ${fil.length?fil.map(f=>`<tr>
     <td><input type="checkbox" data-fax-sel="${f.id}" ${sel.has(f.id)?'checked':''} aria-label="선택"></td>
-    <td>${admin?(f.client_id?esc(cname(f.client_id)):`<select data-fax-client="${f.id}" aria-label="거래처 지정" style="padding:4px 6px;border:1px solid var(--magenta);border-radius:7px;background:var(--sheet);font-size:12px"><option value="">거래처 지정</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>`):'복합기'}${!f.is_read?' <span class="pill new">새</span>':''}</td>
+    <td>${f.kind==='email'?'<span class="pill mail">메일</span>':'<span class="pill fax">팩스</span>'}${!f.is_read?' <span class="pill new">새</span>':''}${admin?`<div style="margin-top:4px">${f.client_id?esc(cname(f.client_id)):`<select data-fax-client="${f.id}" aria-label="거래처 지정" style="padding:4px 6px;border:1px solid var(--magenta);border-radius:7px;background:var(--sheet);font-size:12px"><option value="">거래처 지정</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>`}</div>`:''}</td>
     <td>${esc(f.from_number||'-')}</td>
     <td><input data-fax-title="${f.id}" value="${esc(f.title||'')}" placeholder="제목을 입력해 주세요"></td>
     <td><input data-fax-keyword="${f.id}" value="${esc(f.keyword||'')}" placeholder="담당자·거래처"></td>
@@ -820,9 +866,9 @@ function b64url(data,name){
 }
 function openView(title,html,noClose){$('#sheetTitle').textContent=title;$('#sheetForm').innerHTML='';$('#sheetView').innerHTML=html+(noClose?'':`<div class="row-end"><button class="btn primary" data-close>닫기</button></div>`);sheet.hidden=false}
 let pendingYes=null;
-function ask(msg,label,fn){
+function ask(msg,label,fn,danger){
   pendingYes=fn;
-  openView('확인',`<p style="font-size:15px;margin:0 0 16px">${esc(msg)}</p><div class="row-end"><button class="btn ghost" data-close>취소</button><button class="btn primary" data-act="ask-yes">${esc(label||'확인')}</button></div>`,true);
+  openView('확인',`<p style="font-size:16px;margin:0 0 18px;line-height:1.65">${esc(msg).replace(/\n/g,'<br>')}</p><div class="row-end"><button class="btn ghost" data-close>취소</button><button class="btn ${danger?'danger-solid':'primary'}" data-act="ask-yes">${esc(label||'확인')}</button></div>`,true);
 }
 const uerr=m=>{const e=new Error(m);e.userMsg=m;return e};
 const clientOpts=()=>S.clients.map(c=>[c.id,c.name]);
@@ -918,11 +964,19 @@ function tonerForm(did){
 function tonerReqForm(did,portal){
   let d=did?dev(did):null;const fields=[];
   if(!d){const opts=S.devices.map(x=>[x.id,cname(x.client_id)+' · '+x.model]);if(!opts.length){toast('등록된 장비가 없어요');return}fields.push({k:'device_id',label:'장비',type:'select',options:opts});d=dev(opts[0][0])}
-  fields.push({k:'colors',label:'필요한 토너',type:'checks',options:tonerKeys(d).length===1?[['K','검정']]:['K','C','M','Y'].map(k=>[k,TC[k].n])},{k:'memo',label:'메모',ph:'예: 오늘 중 배송 부탁드려요'});
-  const pre=lowKeys(d);
-  openForm('토너 요청',fields,{device_id:d.id,colors:pre.length?pre:['K']},async x=>{
-    const dd=dev(x.device_id||d.id);if(!x.colors.length)throw uerr('토너 색을 하나 이상 선택하세요.');
-    await q(sb.from('toner_orders').insert({device_id:dd.id,client_id:dd.client_id,colors:x.colors,memo:x.memo,status:'요청',requested_by:isAdmin()?'관리자':'고객사'}))},{submit:portal?'요청 보내기':'저장'});
+  let pre=tonerKeys(d).filter(k=>ui.tsel.has(d.id+':'+k));
+  if(portal){
+    if(!pre.length){toast('필요한 토너를 먼저 눌러 고르세요');return}
+    fields.push({k:'memo',label:'메모 (선택)',ph:'예: 오늘 중 배송 부탁드려요'});
+  }else{
+    fields.push({k:'colors',label:'필요한 토너',type:'checks',options:tonerKeys(d).length===1?[['K','검정']]:['K','C','M','Y'].map(k=>[k,TC[k].n])},{k:'memo',label:'메모',ph:'예: 오늘 중 배송 부탁드려요'});
+    pre=lowKeys(d);if(!pre.length)pre=['K'];
+  }
+  openForm(portal?`토너 요청 · ${pre.map(k=>TC[k].n).join(', ')}`:'토너 요청',fields,{device_id:d.id,colors:pre},async x=>{
+    const dd=dev(x.device_id||d.id);const cols=portal?pre:x.colors;
+    if(!cols.length)throw uerr('토너 색을 하나 이상 선택하세요.');
+    await q(sb.from('toner_orders').insert({device_id:dd.id,client_id:dd.client_id,colors:cols,memo:x.memo,status:'요청',requested_by:isAdmin()?'관리자':'고객사'}));
+    cols.forEach(k=>ui.tsel.delete(dd.id+':'+k))},{submit:portal?'요청 보내기':'저장'});
 }
 function faxForm(){
   if(!S.clients.length){toast('거래처를 먼저 추가하세요');return}
@@ -1042,6 +1096,8 @@ document.addEventListener('click',async e=>{
     case'tk':await q(sb.from('tickets').update({status:v,updated_at:new Date().toISOString()}).eq('id',id));toast(v==='완료'?'완료 처리했어요':'접수 확인했어요');await load();break;
     case'tk-code':closeSheet();openForm('원격 접속 코드',[{k:'session_code',label:'접속 코드',req:true}],S.tickets.find(x=>x.id===id)||{},async x=>{await q(sb.from('tickets').update({session_code:x.session_code,status:'진행',updated_at:new Date().toISOString()}).eq('id',id))});break;
     case'toner-in':tonerForm(id);break;
+    case'tn-pick':{const key=id+':'+e.target.closest('[data-act]').dataset.k;
+      ui.tsel.has(key)?ui.tsel.delete(key):ui.tsel.add(key);render();break}
     case'toner-req':tonerReqForm(id,true);break;
     case'toner-req-admin':tonerReqForm(null,false);break;
     case'ord':{const o=S.orders.find(x=>x.id===id);await q(sb.from('toner_orders').update({status:v,updated_at:new Date().toISOString()}).eq('id',id));
@@ -1071,11 +1127,12 @@ document.addEventListener('click',async e=>{
       }catch(err){msg=errMsg(err);console.error(err)}
       const body=lines.length?lines.map(l=>`<div style="font-size:13px;color:var(--muted);margin-top:4px">${esc(l)}</div>`).join(''):'';
       if(ok){
-        openView('메일 확인 결과',`<div style="font-size:16px;font-weight:600;margin-bottom:8px">새로 등록한 팩스 ${saved}건</div>${body||'<div class="empty">기록이 없어요.</div>'}`);
+        if(saved){openView('확인 완료',`<div style="font-size:16px;font-weight:700;margin-bottom:8px">새 팩스 ${saved}건을 가져왔어요</div>${body}`)}
+        else{closeSheet();toast('새로 온 팩스가 없어요')}
         await load();
       }else{
         openView('메일 확인 실패',`<div class="note" style="margin:0 0 8px;word-break:break-all">${esc(msg||'알 수 없는 오류')}</div>${body}`);
-        btn.disabled=false;btn.textContent='메일 확인';
+        btn.disabled=false;btn.textContent='지금 확인';
       }
       break}
     case'reload':{const b2=a;b2.disabled=true;b2.textContent='확인 중…';
@@ -1088,7 +1145,16 @@ document.addEventListener('click',async e=>{
       }catch(err){toast(errMsg(err))}
       break}
     case'fax-folder':ui.faxFolder=v;ui.faxSel.clear();render();break;
+    case'fax-readall':{const q2=(ui.faxQ||'').trim();
+      const src=(ui.mode==='portal'?S.faxes.filter(f=>f.client_id===ui.portalClient):S.faxes);
+      const un=src.filter(f=>(f.folder||'inbox')===ui.faxFolder&&!f.is_read)
+        .filter(f=>!q2||[f.title,f.keyword,f.file_name,f.from_number].some(x=>(x||'').includes(q2)));
+      if(!un.length){toast('안 읽은 문서가 없어요');break}
+      await markRead(un.map(f=>f.id));toast(un.length+'건을 읽음 처리했어요');await load();break}
     case'fax-bulk':{const ids=[...ui.faxSel];if(!ids.length)break;
+      if(v==='read'){const un=ids.filter(fid=>{const f=S.faxes.find(x=>x.id===fid);return f&&!f.is_read});
+        if(!un.length){toast('이미 다 읽은 문서예요');ui.faxSel.clear();render();break}
+        await markRead(un);ui.faxSel.clear();toast(un.length+'건을 읽음 처리했어요');await load();break}
       if(v==='down'){for(const fid of ids){const f=S.faxes.find(x=>x.id===fid);if(!f)continue;
         const name=f.file_name||((f.title||'fax')+'.pdf');
         if(f.file_data){const url=b64url(f.file_data,name);const a2=document.createElement('a');a2.href=url;a2.download=name;a2.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
@@ -1096,10 +1162,12 @@ document.addEventListener('click',async e=>{
         await new Promise(r=>setTimeout(r,400))}
         toast(ids.length+'건 저장했어요');break}
       if(v==='mail'){mailForm(ids);break}
-      if(v==='purge'){ask(`선택한 ${ids.length}건을 완전히 삭제할까요?`,'완전 삭제',async()=>{
-        for(const fid of ids){const f=S.faxes.find(x=>x.id===fid);if(f&&f.file_path){try{await sb.storage.from('faxes').remove([f.file_path])}catch(_){}}
-          await q(sb.from('faxes').delete().eq('id',fid))}
-        ui.faxSel.clear();toast('삭제했어요');await load()});break}
+      if(v==='purge'){ask(`선택한 ${ids.length}건을 휴지통에서 지웁니다.\n복원이 안 됩니다. 완전 삭제하시겠습니까?`,'완전 삭제',async()=>{
+        for(const fid of ids){const f=S.faxes.find(x=>x.id===fid);if(f&&f.file_path){try{await sb.storage.from('faxes').remove([f.file_path])}catch(_){}}}
+        const gone=await q(sb.rpc('fax_purge',{p_ids:ids}));
+        ui.faxSel.clear();
+        if(!gone)throw uerr('삭제 권한이 없어요. 회사 관리자 계정으로 로그인했는지 확인해 주세요.');
+        toast(gone+'건을 완전히 삭제했어요');await load()},true);break}
       for(const fid of ids)await q(sb.rpc('fax_update',{p_id:fid,p_title:null,p_keyword:null,p_folder:v}));
       ui.faxSel.clear();toast(v==='trash'?'휴지통으로 옮겼어요':v==='archive'?'보관함으로 옮겼어요':'받은 문서로 옮겼어요');await load();break}
     case'fax-mail':mailForm([id]);break;
@@ -1181,7 +1249,8 @@ document.addEventListener('blur',e=>{
   e.target.value=fmtYmd(e.target.value);
 },true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)closeSheet()});
-setInterval(()=>{if(me&&document.visibilityState==='visible'&&sheet.hidden)load().catch(()=>{})},30000);
+setInterval(()=>{if(me&&document.visibilityState==='visible'&&sheet.hidden)load().catch(()=>{})},15000);
+document.addEventListener('visibilitychange',()=>{if(me&&document.visibilityState==='visible'&&sheet.hidden)load().catch(()=>{})});
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){me=null;showLogin()}});
 boot().catch(err=>{console.error(err);showLogin(errMsg(err))});
 </script>
