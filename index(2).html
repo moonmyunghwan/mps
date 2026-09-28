@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>주식회사 공정컴퍼니 MPS 관리센터</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+
+:root{
+  --paper:#F2F5F9; --sheet:#FFFFFF; --ink:#1A2230; --muted:#5C6B80; --line:#D7E0EC;
+  --key:#1F4E8C; --cyan:#0098D4; --magenta:#D6246E; --yellow:#D19700; --ok:#17A673;
+  --chip:#EEF3FA; --tile:#FFFFFF; --tileInk:#1A2230;
+  --navy:#16294A; --navyDark:#0F1D36; --navyLine:#27406B; --navyInk:#B7C8E2;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-weight:500;font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--sheet);border-bottom:4px solid var(--ok)}
+.bar{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:1080px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;letter-spacing:-.01em}
+.cmyk{display:grid;grid-template-columns:repeat(2,8px);gap:2px}
+.cmyk i{width:8px;height:8px;border-radius:2px;display:block}
+.mode{margin-left:auto;display:flex;background:var(--chip);border-radius:999px;padding:3px}
+.mode button{border:0;background:none;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.mode button[aria-pressed="true"]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding:0 12px 10px;max-width:1080px;margin:0 auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{flex:none;border:0;background:none;padding:7px 12px;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;position:relative}
+nav.tabs button[aria-current="true"]{color:var(--ink);background:var(--sheet);font-weight:600}
+nav.tabs .dot{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;border-radius:9px;background:var(--magenta);color:#fff;font-size:11px;line-height:18px;text-align:center}
+main{max-width:1080px;margin:0 auto;padding:18px 16px 60px}
+h1{font-size:34px;margin:0 0 6px;letter-spacing:-.03em;line-height:1.15}
+h2{font-size:22px;margin:0;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:17px;margin:0 0 20px}
+.sec{background:var(--sheet);border:2px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+.sec-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.sec-h .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:2px solid var(--line);background:var(--sheet);color:var(--ink);padding:8px 15px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn.primary{background:var(--key);color:var(--sheet);border-color:var(--key)}
+.btn.sm{padding:5px 12px;font-size:15px;border-radius:8px}
+.btn.ghost{border-color:transparent;background:none}
+.btn.danger{color:var(--magenta)}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+/* counters */
+.meters{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.meter{display:flex;gap:16px;align-items:center;background:var(--sheet);border:2px solid var(--line);border-radius:14px;padding:22px 24px}
+.meter .bar{display:block;width:8px;height:56px;border-radius:4px;flex:none}
+.meter .lab{font-size:17px;color:var(--muted)}
+.meter .big{font-size:44px;font-weight:700;letter-spacing:-.035em;line-height:1;margin-top:6px;font-variant-numeric:tabular-nums}
+.meter .big i{font-style:normal;font-size:18px;font-weight:500;color:var(--muted);margin-left:5px}
+@media (max-width:560px){.meters{grid-template-columns:1fr}.meter .big{font-size:36px}}
+.tn-grid{display:grid;gap:12px;margin-top:14px}
+.tn-cell{background:var(--paper);border:2px solid var(--line);border-radius:14px;padding:20px 12px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.tn-ring{width:124px;height:124px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.tn-ring span{display:flex;align-items:center;justify-content:center;width:88px;height:88px;border-radius:50%;background:var(--paper);font-size:28px;font-weight:700;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.tn-name{font-size:19px;font-weight:700}
+.tn-code{font-size:14px;color:var(--muted);line-height:1.45}
+.phead{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.phead .l{flex:1;min-width:220px}
+.phead .r{text-align:right;flex:none}
+.phead .r .k{font-size:17px;color:var(--muted)}
+.phead .r .v{margin-top:6px;font-size:38px;font-weight:900;letter-spacing:-.035em;color:var(--ok);line-height:1;font-variant-numeric:tabular-nums}
+.phead .r .n{font-size:14px;color:var(--muted);margin-top:5px}
+.prule{height:2px;background:var(--line);margin:22px 0 4px}
+@media (max-width:560px){.phead .r{text-align:left}.phead .r .v{font-size:32px}}
+.tn-cell.low{border-color:var(--yellow)}
+.tn-cell.out{border-color:var(--magenta)}
+@media (max-width:640px){.tn-grid{grid-template-columns:1fr 1fr!important}.tn-ring{width:104px;height:104px}.tn-ring span{width:74px;height:74px;font-size:23px}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+.stat{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left}
+.stat .v{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stat .k{font-size:15px;color:var(--muted);margin-top:2px}
+.stat.alert .v{color:var(--magenta)}
+@media (max-width:700px){.stats{grid-template-columns:1fr 1fr}}
+/* lists */
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0;padding-top:2px}
+.item .main{flex:1;min-width:0}
+.item .t{font-weight:700;font-size:18px}
+.item .m{color:var(--muted);font-size:15px;margin-top:3px}
+.item .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.pill{display:inline-block;font-size:14px;font-weight:700;padding:2px 11px;border-radius:999px;background:var(--chip);color:var(--muted);vertical-align:1px}
+.pill.new{background:var(--magenta);color:#fff}
+.pill.go{background:var(--yellow);color:#1A1E23}
+.pill.done{background:transparent;border:1px solid var(--line)}
+.pill.color{background:var(--cyan);color:#fff}
+.pill.mono{background:var(--ink);color:var(--paper)}
+.empty{color:var(--muted);font-size:17px;padding:16px 0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:16px;min-width:560px}
+th,td{padding:8px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:12.5px}
+th:first-child,td:first-child{text-align:left}
+tr.sum td{font-weight:700;border-bottom:0}
+.over{color:var(--magenta);font-weight:600}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input,.toolbar select{padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--sheet)}
+.dev{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}
+.dev .cnt{display:flex;gap:18px;margin-top:8px;font-size:14px}
+.dev .cnt b{font-size:17px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.cat{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--sheet);text-align:left;cursor:pointer}
+.cat .ic{font-size:22px}
+.cat .n{font-weight:600;margin-top:6px}
+.cat .d{font-size:13px;color:var(--muted)}
+.cat.on{border-color:var(--key)}
+.note{font-size:13px;color:var(--muted);background:var(--chip);border-radius:10px;padding:10px 12px;margin-top:10px}
+.banner{background:var(--magenta);color:#fff;padding:10px 16px;font-size:14px;text-align:center}
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.sheet-bg{position:absolute;inset:0;background:rgba(10,12,15,.45)}
+.sheet-body{position:relative;background:var(--sheet);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px))}
+@media (min-width:640px){.sheet{align-items:center}.sheet-body{border-radius:18px}}
+.sheet-body h2{margin-bottom:14px}
+.f{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.f label{font-size:13px;font-weight:600;color:var(--muted)}
+.f input,.f select,.f textarea{padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--paper);width:100%}
+.f textarea{min-height:84px;resize:vertical}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row-end{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--key);color:var(--sheet);padding:9px 16px;border-radius:10px;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.faxtable{min-width:900px;font-size:15px}
+.faxtable th,.faxtable td{text-align:left;padding:6px 8px;vertical-align:middle}
+.faxtable input[type=text],.faxtable input:not([type]){width:100%;padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--paper);font-size:13px}
+.faxtable tbody tr:hover{background:var(--chip)}
+.faxrow{display:flex;gap:8px;margin:6px 0;flex-wrap:wrap}
+.faxrow input{flex:1;min-width:150px;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:var(--paper);font-size:13px}
+.toner{margin-top:16px;padding-top:16px;border-top:2px solid var(--line)}
+.toner-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:20px;font-weight:700}
+.toner-h .when{font-size:15px;color:var(--muted);font-weight:500}
+.toner-h .right{margin-left:auto;display:flex;gap:6px}
+.pill.warn{background:var(--yellow);color:#1A1E23}
+.checks{display:flex;gap:8px;flex-wrap:wrap}
+.checks label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:14px;color:var(--ink);font-weight:500;cursor:pointer}
+.inv{font-size:14px}
+.inv .hd{display:flex;justify-content:space-between;gap:10px;border-bottom:2px solid var(--key);padding-bottom:10px;margin-bottom:10px}
+.inv .tot{display:flex;justify-content:space-between;font-size:18px;font-weight:700;margin-top:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+
+.login h1{margin-bottom:6px}
+.login .switch{margin-top:14px;font-size:14px;color:var(--muted);text-align:center}
+.login .switch button{border:0;background:none;color:var(--cyan);font-weight:600;cursor:pointer;padding:0}
+.who{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.token{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(--chip);padding:6px 8px;border-radius:7px;word-break:break-all;user-select:all}
+.loading{opacity:.6;pointer-events:none}
+
+/* ===== 시안 F · 밝은 화면 + 남색 왼쪽 메뉴 ===== */
+header.top{background:var(--navy);border-bottom:0}
+header .brand{color:#fff;font-size:17px;letter-spacing:-.035em;white-space:nowrap;overflow:hidden;min-width:0}
+header .brand .cmyk{grid-template-columns:repeat(4,6px);gap:2px}
+header .brand .cmyk i{width:6px;height:19px;border-radius:2px}
+.who{color:#9CB2D4}
+header .btn.ghost{color:#9CB2D4;border-color:transparent;background:none}
+header .mode{background:var(--navyDark)}
+header .mode button{color:#9CB2D4;font-size:14px;font-weight:700}
+header .mode button[aria-pressed="true"]{background:#fff;color:var(--navy);box-shadow:none}
+nav.tabs button{color:var(--navyInk);font-size:15px;font-weight:500}
+nav.tabs button[aria-current="true"]{background:#2E5C9A;color:#fff;font-weight:700}
+@media (min-width:900px){
+  body{display:grid;grid-template-columns:244px minmax(0,1fr);align-items:start;min-height:100vh}
+  body:has(#top[hidden]){grid-template-columns:minmax(0,1fr)}
+  #banner{grid-column:1/-1}
+  header.top{grid-column:1;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:0}
+  .bar{display:contents}
+  header .brand{order:1;height:68px;margin:0;padding:0 14px;background:var(--navyDark);justify-content:center;gap:9px}
+  header .mode{order:2;margin:12px 12px 0!important;border-radius:9px}
+  header .mode button{flex:1;padding:8px 0;border-radius:7px}
+  nav.tabs{order:3;flex:1 1 auto;min-height:0;flex-direction:column;gap:3px;padding:12px;margin:0;max-width:none;overflow-y:auto;overflow-x:hidden}
+  nav.tabs button{width:100%;text-align:left;padding:12px 14px;border-radius:9px}
+  header .who{order:4;margin:0!important;padding:14px 18px 0;max-width:none;white-space:normal;font-size:14px;border-top:1px solid var(--navyLine)}
+  header .btn.ghost{order:5;align-self:flex-start;margin:6px 14px 18px;padding:0 4px;font-size:14px;font-weight:700}
+  main{padding:26px 28px 64px;max-width:none;margin:0;min-width:0}
+  body:has(#top[hidden]) main{padding:0}
+}
+@media (max-width:899px){
+  #top[hidden]+main{padding:0}
+  .bar{flex-wrap:wrap;gap:10px;padding:11px 14px}
+  header .brand{flex:1 1 100%;font-size:17px}
+  header .mode{margin-left:0!important}
+  header .mode button{white-space:nowrap;padding:7px 14px}
+  header .who{margin-left:auto;font-size:13px}
+  header .btn.ghost{padding:4px 8px}
+}
+/* 카드 · 표 */
+.sec{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+.stat{border:2px solid var(--line);border-radius:12px;padding:15px 18px}
+.stat .v{font-size:31px;color:var(--key)}
+.stat.alert{border-color:var(--magenta)}
+.stat.alert .v{color:var(--magenta)}
+th{font-weight:700;color:#2B4A76;font-size:14px}
+.item{border-top:1px solid var(--line)}
+.meter{border:1px solid var(--line)}
+.toner{border-top:1px solid var(--line)}
+.dev{border:1px solid var(--line)}
+.login .switch button{color:var(--key)}
+/* 토너 잔량 링 */
+.tn-cell{--cellbg:var(--sheet);background:var(--cellbg);border:2px solid var(--line)}
+.tn-cell.low{--cellbg:#FFFBF0;border-color:var(--yellow)}
+.tn-cell.out{--cellbg:#FFF4F8;border-color:var(--magenta)}
+.tn-ring span{background:var(--cellbg)}
+
+/* 로그인 화면 */
+.login{max-width:none;margin:0;padding:0;display:grid;grid-template-columns:minmax(0,1fr)}
+.login-hero{background:var(--navy);color:#fff;padding:44px 40px}
+.login-hero .brand{color:#fff;font-size:20px;white-space:normal}
+.login-hero .cmyk{grid-template-columns:repeat(4,9px);gap:3px}
+.login-hero .cmyk i{width:9px;height:24px;border-radius:3px}
+.hero-t{font-size:38px;font-weight:700;letter-spacing:-.035em;line-height:1.22;margin:34px 0 0}
+.hero-d{font-size:17px;color:#A9C0E2;line-height:1.65;margin:14px 0 0}
+.hero-list{margin-top:30px;display:flex;flex-direction:column;gap:13px}
+.hero-i{display:flex;align-items:center;gap:13px}
+.hero-i .ic{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:11px;background:#22375E;font-size:18px;flex:none}
+.hero-i b{display:block;font-size:17px;font-weight:700}
+.hero-i em{display:block;margin-top:2px;font-size:14px;color:#A9C0E2;font-style:normal}
+.hero-f{margin-top:32px;font-size:14px;color:#7E96BC;line-height:1.6}
+.login-form{display:flex;align-items:center;justify-content:center;padding:36px 20px}
+.login-form .sec{width:100%;max-width:400px;padding:26px 24px}
+.login-form .btn.primary{padding:13px;font-size:18px;border-radius:11px}
+@media (min-width:900px){
+  .login{grid-template-columns:minmax(0,46%) minmax(0,1fr);min-height:100vh}
+  .login-hero{display:flex;flex-direction:column;justify-content:center;padding:48px 52px}
+  .hero-t{font-size:42px}
+}
+@media (max-width:899px){
+  .login-hero{padding:28px 20px}
+  .hero-t{font-size:30px;margin-top:22px}
+  .hero-d{font-size:16px}
+  .hero-list{margin-top:22px;gap:11px}
+  .hero-f{margin-top:24px}
+}
+
+/* 고객사 화면 2단 */
+.pcols{display:grid;grid-template-columns:minmax(0,1fr) 356px;gap:16px;align-items:start}
+.pcol{display:flex;flex-direction:column;gap:16px;min-width:0}
+.pcol .sec{margin-bottom:0}
+@media (max-width:1100px){.pcols{grid-template-columns:minmax(0,1fr)}}
+.meters.col{grid-template-columns:1fr;gap:16px}
+.meter .mnote{font-size:13px;color:var(--muted);text-align:right;line-height:1.55;flex:none}
+.sec>.toner:first-child{margin-top:0;padding-top:0;border-top:0}
+.devt{font-weight:700;font-size:18px;margin-top:14px}
+.devt span{color:var(--muted);font-weight:500;font-size:15px}
+
+/* 가운데 정렬 */
+.cats{gap:9px;grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+.cat{text-align:center;background:#F7FAFD;border:1px solid var(--line);border-radius:10px;padding:13px 8px}
+.cat .ic{font-size:22px;line-height:1.2}
+.cat .n{margin-top:6px;font-size:15px;font-weight:700;color:#16294A}
+.cat .d{display:none}
+.faxtable th,.faxtable td{text-align:center;vertical-align:middle}
+.faxtable td input[type=text],.faxtable td input:not([type]){text-align:center}
+
+/* 버전 표시 (작게) */
+.ver{font-size:11px;color:#42587D;font-weight:500}
+.ver-f{margin-top:16px;text-align:center;font-size:11px;color:#9AA8BA}
+header .brand{justify-content:flex-start}
+@media (min-width:900px){
+  header .brand{justify-content:center}
+  header .ver{order:6;margin:0 0 14px 18px}
+}
+@media (max-width:899px){header .ver{align-self:center}}
+/* 제목줄 + 요금 블록 */
+.phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.phead .l{flex:1 1 300px;min-width:0}
+.phead .l h1{margin:0}
+.phead .l .sub{margin:8px 0 0}
+.phead .r{flex:none;background:var(--navy);color:#fff;border-radius:12px;padding:14px 24px;text-align:right}
+.phead .r .k{font-size:15px;color:#A9C0E2}
+.phead .r .v{margin-top:5px;font-size:32px;font-weight:900;letter-spacing:-.035em;color:#fff;line-height:1}
+.phead .r .n{margin-top:5px;font-size:13px;color:#A9C0E2}
+@media (max-width:560px){.phead .r{width:100%;text-align:left}}
+
+</style>
+</head>
+<body>
+<div id="banner"></div>
+<header class="top" id="top" hidden>
+  <div class="bar">
+    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span></div>
+    <div class="mode" role="group" aria-label="화면 전환" id="modeSwitch" hidden>
+      <button data-mode="admin" aria-pressed="true">관리자</button>
+      <button data-mode="portal" aria-pressed="false">고객사 화면</button>
+    </div>
+    <span class="who" id="who" style="margin-left:auto"></span>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v28</span>
+  </div>
+  <nav class="tabs" id="tabs"></nav>
+</header>
+<main id="app"><p class="empty">불러오는 중…</p></main>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet-body" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h2 id="sheetTitle"></h2>
+    <div id="sheetView"></div>
+    <form id="sheetForm"></form>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<datalist id="models"><option value="삼성 SL-X6250LX"></option></datalist>
+
+<script>
+/* ================= 설정 ================= */
+const SB_URL = 'https://rixdncndqihpmausfwwq.supabase.co';
+const SB_KEY = 'sb_publishable_kuFfILfTSkD7Rfbs-OG2bQ_18uYrvjC';
+/* ======================================= */
+
+const $=(s,r=document)=>r.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won=n=>Math.round(n||0).toLocaleString('ko-KR')+'원';
+const nf=n=>Math.round(n||0).toLocaleString('ko-KR');
+const now=new Date();
+const thisMonth=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+const mLabel=m=>{if(!m)return'';const[y,mm]=m.split('-');return `${y}년 ${+mm}월`};
+const dt=s=>{if(!s)return'';const d=new Date(s);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
+
+if(!window.supabase){document.getElementById('app').innerHTML='<div class="sec"><div class="empty">서버 연결 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.</div></div>';throw new Error('supabase-js not loaded')}
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+
+const ICONS={print_rental:'🖨️',printing:'📄',interior:'🛠️',furniture:'🪑',moving:'🚚'};
+const PRESETS={'SL-X6250LX':{K:{code:'CLT-K601S',yield:23000},C:{code:'CLT-C601S',yield:20000},M:{code:'CLT-M601S',yield:20000},Y:{code:'CLT-Y601S',yield:20000}}};
+const TC={K:{n:'검정',c:'#2B2F36'},C:{n:'시안',c:'#0098D4'},M:{n:'마젠타',c:'#D6246E'},Y:{n:'옐로',c:'#D19700'}};
+const LOW=20,OUT=5;
+
+let me=null;
+const S={clients:[],devices:[],bills:[],tickets:[],faxes:[],orders:[],requests:[],cats:[],agents:[],profiles:[],docs:[],mails:[]};
+const ui={mode:'admin',tab:'home',month:thisMonth,portalClient:null,devFilter:'',authMode:'login',deviceView:null,faxFolder:'inbox',faxQ:'',faxSel:new Set()};
+
+const isAdmin=()=>me&&me.role==='admin';
+const isClientAdmin=()=>me&&me.role==='client'&&me.client_role==='admin';
+const canSeeMoney=()=>isAdmin()||isClientAdmin();
+const cname=id=>(S.clients.find(c=>c.id===id)||{name:'(알 수 없는 거래처)'}).name;
+const dev=id=>S.devices.find(d=>d.id===id);
+const catName=k=>(S.cats.find(c=>c.key===k)||{name:k}).name;
+
+/* ---------- 토너 ---------- */
+const tonerKeys=d=>d.color_type==='흑백'?['K']:['K','C','M','Y'];
+const preset=d=>{const e=Object.entries(PRESETS).find(([k])=>(d.model||'').toUpperCase().includes(k));return e?e[1]:null};
+const tSpec=(d,k)=>{const p=preset(d);return p?p[k]:null};
+const tLevel=(d,k)=>{const v=d['toner_'+k.toLowerCase()];return v==null?null:+v};
+const tStat=v=>v==null?'':v<=OUT?'out':v<=LOW?'low':'';
+const tWorst=d=>{const v=tonerKeys(d).map(k=>tLevel(d,k)).filter(x=>x!=null);return v.length?Math.min(...v):null};
+const lowKeys=d=>tonerKeys(d).filter(k=>{const v=tLevel(d,k);return v!=null&&v<=LOW});
+
+/* ---------- 청구 ---------- */
+function contractInfo(d){
+  if(!d.contract_end)return null;
+  const end=new Date(d.contract_end+'T23:59:59+09:00');
+  const days=Math.ceil((end-Date.now())/86400000);
+  return {end:d.contract_end,start:d.contract_start,days,soon:days<=60&&days>=0,over:days<0};
+}
+const bill=(did,m)=>S.bills.find(b=>b.device_id===did&&b.month===m);
+const lastBill=did=>S.bills.filter(b=>b.device_id===did).sort((a,b)=>a.month<b.month?1:-1)[0];
+const lastUsage=did=>S.bills.filter(b=>b.device_id===did&&!b.first_reading).sort((a,b)=>a.month<b.month?1:-1)[0];
+function clientBill(cid,m){
+  const rows=S.devices.filter(d=>d.client_id===cid).map(d=>({d,u:bill(d.id,m)}));
+  const supply=rows.reduce((s,r)=>s+(r.u?+r.u.supply:(+r.d.base_fee||0)),0);
+  const vat=Math.round(supply*0.1);
+  return {rows,supply,vat,total:supply+vat,missing:rows.filter(r=>!r.u).length};
+}
+
+/* ---------- 데이터 ---------- */
+async function q(p){const {data,error}=await p;if(error)throw error;return data}
+async function load(){
+  const jobs={
+    clients:sb.from('clients').select('*').order('name'),
+    devices:sb.from('devices').select('*').order('created_at'),
+    bills:sb.from('monthly_bills').select('*'),
+    tickets:sb.from('tickets').select('*').order('created_at',{ascending:false}).limit(300),
+    faxes:sb.from('faxes').select('*').order('received_at',{ascending:false}).limit(300),
+    orders:sb.from('toner_orders').select('*').order('created_at',{ascending:false}).limit(300),
+    requests:sb.from('service_requests').select('*').order('created_at',{ascending:false}).limit(300),
+    cats:sb.from('service_categories').select('*').order('sort'),
+    docs:sb.from('client_documents').select('*').order('created_at',{ascending:false}),
+  };
+  if(isAdmin()){jobs.agents=sb.from('agents').select('*').order('created_at');jobs.profiles=sb.from('profiles').select('*').order('created_at');jobs.mails=sb.rpc('mail_accounts_list')}
+  const keys=Object.keys(jobs);const res=await Promise.all(keys.map(k=>jobs[k]));
+  let failed=0;res.forEach((r,i)=>{if(r.error){failed++;console.error(keys[i],r.error)}else S[keys[i]]=r.data||[]});
+  $('#banner').innerHTML=failed?'<div class="banner">일부 데이터를 불러오지 못했어요. 새로고침해 보세요.</div>':'';
+  render();
+}
+function errMsg(e){
+  const m=(e&&(e.message||e.error_description))||'';
+  if(/Invalid login/i.test(m))return '이메일 또는 비밀번호가 맞지 않아요.';
+  if(/Email not confirmed/i.test(m))return '이메일 인증을 먼저 완료하세요. 받은 메일함을 확인하세요.';
+  if(/already registered/i.test(m))return '이미 가입된 이메일이에요. 로그인하세요.';
+  if(/Password should be/i.test(m))return '비밀번호는 6자 이상이어야 해요.';
+  if(/row-level security|permission/i.test(m))return '이 작업을 할 권한이 없어요.';
+  if(/duplicate key.*serial/i.test(m))return '이미 등록된 시리얼 번호예요.';
+  if(/violates foreign key/i.test(m))return '연결된 데이터가 있어 삭제할 수 없어요.';
+  if(/Failed to fetch|NetworkError/i.test(m))return '서버에 연결하지 못했어요. 인터넷 연결을 확인하세요.';
+  return '처리하지 못했어요: '+m;
+}
+
+/* ---------- 로그인 ---------- */
+function showLogin(msg=''){
+  $('#top').hidden=true;
+  const up=ui.authMode==='signup';
+  const PITCH=[['\u{1F3A8}','토너 잔량 자동 확인','복합기에서 매시간 자동으로 올라와요'],
+    ['\u{1F4E0}','팩스 수신함','팩스가 오면 새로고침 없이 바로 보여요'],
+    ['\u{1F9FE}','이번 달 사용량과 요금','흑백·컬러 장수와 초과금을 자동 계산해요'],
+    ['\u{1F6E0}\uFE0F','원격지원 요청','문제가 생기면 화면에서 바로 요청하세요']];
+  $('#app').innerHTML=`<div class="login">
+    <div class="login-hero">
+      <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span>주식회사 공정컴퍼니</div>
+      <h2 class="hero-t">복합기 사용량과<br>팩스를 한곳에서</h2>
+      <p class="hero-d">토너 잔량, 이번 달 출력 장수, 팩스 수신함까지<br>로그인 한 번으로 바로 확인하세요.</p>
+      <div class="hero-list">${PITCH.map(([i,t,d])=>`<div class="hero-i"><span class="ic">${i}</span><span><b>${t}</b><em>${d}</em></span></div>`).join('')}</div>
+      <div class="hero-f">경기도 시흥시 · 031-431-7014<br>복합기 렌탈 · 인쇄 · 인테리어 · 사무실가구 · 이사</div>
+    </div>
+    <div class="login-form"><div class="sec">
+    <h1>${up?'고객사 계정 만들기':'로그인'}</h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
+    ${msg?`<div class="note" style="margin:0 0 12px">${esc(msg)}</div>`:''}
+    <form id="authForm">
+      ${up?'<div class="f"><label for="aName">이름 · 회사명</label><input id="aName" required placeholder="예: 홍길동 (한빛세무회계)"></div>':''}
+      <div class="f"><label for="aEmail">이메일</label><input id="aEmail" type="email" autocomplete="email" required></div>
+      <div class="f"><label for="aPw">비밀번호</label><input id="aPw" type="password" autocomplete="${up?'new-password':'current-password'}" minlength="6" required></div>
+      <button class="btn primary" style="width:100%;padding:10px" type="submit">${up?'계정 만들기':'로그인'}</button>
+    </form>
+    <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
+    ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
+    <div class="ver-f">v28</div>
+  </div></div></div>`;
+  $('#authForm').onsubmit=async e=>{
+    e.preventDefault();const f=e.target;f.classList.add('loading');
+    const email=$('#aEmail').value.trim(),password=$('#aPw').value;
+    try{
+      if(up){
+        const {data,error}=await sb.auth.signUp({email,password,options:{data:{name:$('#aName').value.trim()}}});
+        if(error)throw error;
+        if(!data.session){ui.authMode='login';showLogin('가입 확인 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인하세요.');return}
+      }else{
+        const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;
+      }
+      await boot();
+    }catch(err){f.classList.remove('loading');toast(errMsg(err))}
+  };
+}
+function showPending(){
+  $('#top').hidden=false;$('#tabs').hidden=true;$('#modeSwitch').hidden=true;$('#who').textContent=me.email;
+  $('#app').innerHTML=`<h1>가입이 완료됐어요</h1><div class="sec"><div class="empty">담당자가 회사 정보를 연결하면 사용량, 토너, 팩스를 볼 수 있어요. 연결이 끝나면 새로고침하세요.</div><button class="btn" onclick="location.reload()">새로고침</button></div>`;
+}
+let rtChannel=null,rtTimer=null;
+function startRealtime(){
+  if(rtChannel)return;
+  try{
+    rtChannel=sb.channel('mps-live')
+      .on('postgres_changes',{event:'*',schema:'public',table:'faxes'},()=>{
+        clearTimeout(rtTimer);
+        rtTimer=setTimeout(()=>{if(sheet.hidden)load().catch(()=>{})},800);
+      })
+      .on('postgres_changes',{event:'*',schema:'public',table:'devices'},()=>{
+        clearTimeout(rtTimer);
+        rtTimer=setTimeout(()=>{if(sheet.hidden)load().catch(()=>{})},800);
+      })
+      .subscribe();
+  }catch(e){console.error('realtime',e)}
+}
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){showLogin();return}
+  let p=null;
+  try{p=await q(sb.from('profiles').select('*').eq('id',session.user.id).maybeSingle())}catch(e){console.error(e)}
+  me={id:session.user.id,email:session.user.email,role:p?p.role:'client',client_id:p?p.client_id:null,
+      client_role:p&&p.client_role?p.client_role:'staff',active:p?p.active!==false:true};
+  if(!isAdmin()&&!me.active){$('#top').hidden=false;$('#modeSwitch').hidden=true;$('#tabs').hidden=true;$('#who').textContent=me.email;
+    $('#app').innerHTML='<h1>사용이 중지된 계정이에요</h1><div class="sec"><div class="empty">회사 관리자나 담당자에게 문의해 주세요.</div></div>';return}
+  const h=(location.hash||'').match(/device=([0-9a-f-]{36})/i); if(h) ui.deviceView=h[1];
+  if(!isAdmin()&&!me.client_id){showPending();return}
+  ui.mode=isAdmin()?'admin':'portal';
+  $('#top').hidden=false;$('#modeSwitch').hidden=!isAdmin();$('#who').textContent=me.email;
+  $('#app').innerHTML='<p class="empty">불러오는 중…</p>';
+  await load();
+  startRealtime();
+}
+
+/* ---------- 화면 ---------- */
+const ADMIN_TABS=[['home','현황'],['clients','거래처'],['devices','장비'],['billing','검침·청구'],['toner','토너'],['support','원격지원'],['fax','팩스'],['platform','서비스 확장'],['accounts','계정']];
+function renderTabs(){
+  const nav=$('#tabs');
+  if(ui.mode==='portal'){nav.innerHTML='';nav.hidden=true;return}
+  nav.hidden=false;
+  const badge={toner:S.orders.filter(o=>o.status==='요청').length,support:S.tickets.filter(t=>t.status==='접수').length,fax:0,platform:S.requests.filter(r=>r.status==='접수').length,accounts:S.profiles.filter(p=>p.role==='client'&&!p.client_id).length};
+  nav.innerHTML=ADMIN_TABS.map(([k,n])=>`<button data-tab="${k}" aria-current="${ui.tab===k}">${n}${badge[k]?`<span class="dot">${badge[k]}</span>`:''}</button>`).join('');
+}
+function render(){
+  if(!me)return;
+  renderTabs();
+  document.querySelectorAll('.mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===ui.mode));
+  const app=$('#app');
+  if(ui.mode==='portal'){app.innerHTML=vPortal();return}
+  app.innerHTML=({home:vHome,clients:vClients,devices:vDevices,billing:vBilling,toner:vToner,support:vSupport,fax:vFax,platform:vPlatform,accounts:vAccounts}[ui.tab]||vHome)();
+}
+function meter(lab,n,col,foot,note){
+  return `<div class="meter"><span class="bar" style="background:${col}"></span><div style="flex:1;min-width:0"><div class="lab">${lab}</div><div class="big num">${nf(n)}<i>${foot}</i></div></div>${note?`<div class="mnote">${note}</div>`:''}</div>`;
+}
+function meters(mono,color,foot='장',cls='',nm='',nc=''){
+  return `<div class="meters ${cls}">${meter('이번 달 흑백 출력',mono,'var(--ink)',foot,nm)}${meter('이번 달 컬러 출력',color,'var(--cyan)',foot,nc)}</div>`;
+}
+function vHome(){
+  let mono=0,color=0,total=0;const missing=[];
+  S.devices.forEach(d=>{const u=bill(d.id,thisMonth);if(u){mono+=+u.used_mono;color+=+u.used_color;total+=+u.supply}else{missing.push(d);total+=+d.base_fee||0}});
+  const waiting=S.tickets.filter(t=>t.status!=='완료');
+  const low=S.devices.filter(d=>lowKeys(d).length).sort((a,b)=>tWorst(a)-tWorst(b));
+  const ord=S.orders.filter(o=>o.status==='요청').length;
+  const reqs=S.requests.filter(r=>r.status==='접수').length;
+  const offline=S.agents.filter(a=>a.active&&(!a.last_seen_at||Date.now()-new Date(a.last_seen_at)>3*3600e3)).length;
+  return `<div class="phead"><div class="l"><h1>${mLabel(thisMonth)} 현황</h1><p class="sub">거래처 ${S.clients.length}곳 · 설치 장비 ${S.devices.length}대</p></div>
+  <div class="r"><div class="k">이번 달 총 청구 (VAT 별도)</div><div class="v num">${won(total)}</div></div></div>
+  ${meters(mono,color)}
+  <div class="stats">
+    <button class="stat" data-tab="billing"><div class="v">${nf(total/10000)}만</div><div class="k">예상 청구 (VAT 별도)</div></button>
+    <button class="stat ${missing.length?'alert':''}" data-tab="billing"><div class="v">${missing.length}대</div><div class="k">이번 달 미검침</div></button>
+    <button class="stat ${low.length?'alert':''}" data-tab="toner"><div class="v">${low.length}대</div><div class="k">토너 부족</div></button>
+    <button class="stat ${waiting.length?'alert':''}" data-tab="support"><div class="v">${waiting.length}건</div><div class="k">처리 중 원격지원</div></button>
+  </div>
+  ${(()=>{const ex=S.devices.map(d=>({d,c:contractInfo(d)})).filter(x=>x.c&&(x.c.soon||x.c.over));
+    return ex.length?`<div class="note" style="margin:0 0 14px">계약 만료가 가까운 장비 ${ex.length}대: ${ex.map(x=>esc(cname(x.d.client_id))+' '+esc(x.d.model)+(x.c.over?' (만료됨)':` (${x.c.days}일 남음)`)).join(', ')}</div>`:''})()}
+  ${offline?`<div class="note" style="margin:0 0 14px">수집 프로그램 ${offline}대가 3시간 넘게 보고하지 않았어요. 거래처 탭의 [수집 토큰]에서 확인하세요.</div>`:''}
+  <div class="grid2">
+    <div class="sec"><div class="sec-h"><h2>토너 부족</h2>${ord?`<span class="pill new">고객 요청 ${ord}건</span>`:''}<div class="right"><button class="btn sm" data-tab="toner">토너 관리</button></div></div>
+      <div class="list">${low.length?low.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.model)}</div><div class="m">${esc(cname(d.client_id))} · ${lowKeys(d).map(k=>TC[k].n+' '+tLevel(d,k)+'%').join(', ')}</div></div></div>`).join(''):'<div class="empty">잔량 20% 이하인 토너가 없어요.</div>'}</div></div>
+    <div class="sec"><div class="sec-h"><h2>진행 중인 원격지원</h2></div>
+      <div class="list">${waiting.length?waiting.slice(0,6).map(tkItem).join(''):'<div class="empty">대기 중인 요청이 없어요.</div>'}</div></div>
+  </div>
+  <div class="grid2">
+    <div class="sec"><div class="sec-h"><h2>검침 입력이 필요한 장비</h2></div>
+      <div class="list">${missing.length?missing.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.model)}</div><div class="m">${esc(cname(d.client_id))} · ${esc(d.location||'')}</div></div><div class="acts"><button class="btn sm primary" data-act="read" data-id="${d.id}">검침 입력</button></div></div>`).join(''):'<div class="empty">이번 달 검침이 모두 끝났어요.</div>'}</div></div>
+    <div class="sec"><div class="sec-h"><h2>새 서비스 문의</h2><div class="right"><button class="btn sm" data-tab="platform">전체 보기</button></div></div>
+      <div class="list">${reqs?S.requests.filter(r=>r.status==='접수').slice(0,5).map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))}</div><div class="m">${esc(cname(r.client_id))} · ${esc(r.detail)}</div></div></div>`).join(''):'<div class="empty">새 문의가 없어요.</div>'}</div></div>
+  </div>`;
+}
+function vClients(){
+  return `<h1>거래처</h1><p class="sub">렌탈 계약을 맺은 고객사</p>
+  <div class="sec"><div class="sec-h"><h2>${S.clients.length}곳</h2><div class="right"><button class="btn primary" data-act="add-client">거래처 추가</button></div></div>
+  <div class="list">${S.clients.length?S.clients.map(c=>{const n=S.devices.filter(d=>d.client_id===c.id).length;const b=clientBill(c.id,thisMonth);const ag=S.agents.filter(a=>a.client_id===c.id&&a.active);const users=S.profiles.filter(p=>p.client_id===c.id).length;
+  return `<div class="item"><div class="main"><div class="t">${esc(c.name)}</div><div class="m">${esc(c.contact||'')} ${esc(c.phone||'')} · 장비 ${n}대 · 이번 달 ${won(b.total)}</div><div class="m">${(()=>{const ma=S.mails.filter(m=>m.client_id===c.id);if(!ma.length)return '<span style="color:var(--magenta)">팩스 메일 계정 없음</span>';
+  const bad=ma.filter(m=>m.last_result&&m.last_result.startsWith('실패')).length;
+  return `팩스 메일 ${ma.length}개${bad?' <span style="color:var(--magenta)">('+bad+'개 오류)</span>':''}`})()} · 서류 ${S.docs.filter(x=>x.client_id===c.id).length}건 · 고객 계정 ${users}개 · 수집 프로그램 ${ag.length?ag.map(a=>a.last_seen_at?'최근 보고 '+dt(a.last_seen_at):'보고 없음').join(', '):'없음'}</div></div>
+  <div class="acts"><button class="btn sm" data-act="invoice" data-id="${c.id}">청구서</button><button class="btn sm" data-act="mails" data-id="${c.id}">팩스 메일</button><button class="btn sm" data-act="docs" data-id="${c.id}">서류</button><button class="btn sm" data-act="agents" data-id="${c.id}">수집 토큰</button><button class="btn sm" data-act="edit-client" data-id="${c.id}">수정</button></div></div>`}).join(''):'<div class="empty">첫 거래처를 추가해 보세요.</div>'}</div></div>`;
+}
+function tonerBlock(d,portal){
+  const u=lastUsage(d.id);const lk=lowKeys(d);const has=tonerKeys(d).some(k=>tLevel(d,k)!=null);
+  const pend=S.orders.find(o=>o.device_id===d.id&&o.status!=='교체완료');
+  const keys=tonerKeys(d);
+  const cells=keys.map(k=>{const v=tLevel(d,k),sp=tSpec(d,k);const col=TC[k].c;let est='';
+    if(v!=null&&sp){const pages=Math.round(sp.yield*v/100);const monthly=u?(k==='K'?+u.used_mono+ +u.used_color:+u.used_color):0;
+      est=`약 ${nf(pages)}장 남음`+(monthly>0?`<br>약 ${Math.round(pages/monthly*30)}일 사용 가능`:'')}
+    else if(v!=null&&v<=OUT)est='교체가 필요해요';
+    const pct=v==null?0:v;
+    return `<div class="tn-cell ${tStat(v)}">
+      <div class="tn-ring" role="img" aria-label="${TC[k].n} 토너 ${v??'미확인'}%" style="background:conic-gradient(${col} 0% ${pct}%, var(--line) ${pct}% 100%)"><span style="color:${v==null?'var(--muted)':col}">${v==null?'-':v+'%'}</span></div>
+      <div class="tn-name">${TC[k].n}</div>
+      <div class="tn-code">${sp?esc(sp.code):''}${sp&&est?'<br>':''}${est}</div></div>`}).join('');
+  const rows=`<div class="tn-grid" style="grid-template-columns:repeat(${keys.length},minmax(0,1fr))">${cells}</div>`;
+  const st=pend?`<span class="pill go">토너 ${esc(pend.status)}</span>`:lk.some(k=>tLevel(d,k)<=OUT)?'<span class="pill new">교체 필요</span>':lk.length?'<span class="pill warn">토너 부족</span>':has?'<span class="pill done">정상</span>':'';
+  return `<div class="toner"><div class="toner-h"><b>토너 잔량</b>${st}<span class="when">${d.toner_updated_at?dt(d.toner_updated_at)+' '+esc(d.toner_updated_by||'')+' 확인':'아직 확인 전'}</span>
+  <div class="right"><button class="btn sm" data-act="toner-in" data-id="${d.id}">잔량 입력</button>${portal&&!pend?`<button class="btn sm ${lk.length?'primary':''}" data-act="toner-req" data-id="${d.id}">토너 요청</button>`:''}</div></div>${rows}</div>`;
+}
+function devCard(d,admin=true){
+  const last=lastBill(d.id);
+  return `<div class="dev"><div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1;min-width:0">
+  <div class="t" style="font-weight:600">${esc(d.model)} <span class="pill ${d.color_type==='컬러'?'color':'mono'}">${d.color_type==='컬러'?'컬러 겸용':'흑백 전용'}</span></div>
+  <div class="m" style="color:var(--muted);font-size:13px">${admin?esc(cname(d.client_id))+' · ':''}${esc(d.location||'')} · S/N ${esc(d.serial||'-')}${d.ip?' · '+esc(d.ip):''}</div></div>
+  ${admin?`<div class="acts" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm" data-act="qr" data-id="${d.id}">QR</button><button class="btn sm" data-act="remote" data-id="${d.id}">원격</button><button class="btn sm" data-act="read" data-id="${d.id}">검침</button><button class="btn sm" data-act="edit-device" data-id="${d.id}">수정</button></div>`:''}</div>
+  <div class="cnt num"><div>흑백 누적 <b>${last?nf(last.mono):'-'}</b></div><div>컬러 누적 <b>${last?nf(last.color):'-'}</b></div></div>
+  <div style="font-size:13px;color:var(--muted);margin-top:4px">${last?`마지막 검침 ${mLabel(last.month)}`:'검침 기록 없음'}${d.last_seen_at?` · 자동 수집 ${dt(d.last_seen_at)}`:''}${admin?` · 기본료 ${won(d.base_fee)} · 무료 흑백 ${nf(d.incl_mono)}장 / 컬러 ${nf(d.incl_color)}장 · 초과 흑백 ${nf(d.rate_mono)}원 / 컬러 ${nf(d.rate_color)}원`:''}</div>${(()=>{const c=contractInfo(d);if(!c&&!d.deposit)return '';
+  return `<div style="font-size:13px;color:var(--muted);margin-top:4px">${c?`계약 ${esc(c.start||'')} ~ ${esc(c.end)} ${c.over?'<span class="pill new">만료됨</span>':c.soon?`<span class="pill warn">만료 ${c.days}일 전</span>`:`(${Math.floor(c.days/30)}개월 남음)`}`:''}${admin&&d.deposit?` · 보증금 ${won(d.deposit)}`:''}</div>`})()}${admin?tonerBlock(d,false):''}</div>`;
+}
+function vDevices(){
+  const list=S.devices.filter(d=>!ui.devFilter||d.client_id===ui.devFilter);
+  return `<h1>장비</h1><p class="sub">설치된 복합기와 장별 요금 계약</p>
+  <div class="toolbar"><select id="devFilter" aria-label="거래처 선택"><option value="">전체 거래처</option>${S.clients.map(c=>`<option value="${c.id}" ${ui.devFilter===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
+  <button class="btn primary" data-act="add-device" style="margin-left:auto">장비 등록</button></div>
+  ${list.length?list.map(d=>devCard(d)).join(''):'<div class="sec"><div class="empty">등록된 장비가 없어요. 거래처를 먼저 추가한 뒤 장비를 등록하세요.</div></div>'}`;
+}
+function vBilling(){
+  const m=ui.month;let grand=0;
+  const blocks=S.clients.map(c=>{
+    const b=clientBill(c.id,m);if(!b.rows.length)return '';grand+=b.total;
+    return `<div class="sec"><div class="sec-h"><h2>${esc(c.name)}</h2>${b.missing?`<span class="pill new">미검침 ${b.missing}대</span>`:''}<div class="right"><button class="btn sm" data-act="invoice" data-id="${c.id}">청구서 보기</button></div></div>
+    <div class="scroll"><table class="num"><thead><tr><th>장비</th><th>흑백 사용</th><th>컬러 사용</th><th>흑백 초과</th><th>컬러 초과</th><th>기본료</th><th>초과금</th><th></th></tr></thead><tbody>
+    ${b.rows.map(({d,u})=>u?`<tr><td>${esc(d.model)}<br><span style="color:var(--muted);font-size:12px">${esc(d.location||'')}</span></td><td>${nf(u.used_mono)}${u.first_reading?'<br><span style="color:var(--muted);font-size:12px">첫 검침</span>':''}</td><td>${nf(u.used_color)}</td><td class="${+u.over_mono?'over':''}">${nf(u.over_mono)}</td><td class="${+u.over_color?'over':''}">${nf(u.over_color)}</td><td>${nf(u.base_fee)}</td><td class="${+u.over_fee?'over':''}">${nf(u.over_fee)}</td><td><button class="btn sm" data-act="read" data-id="${d.id}">수정</button></td></tr>`
+      :`<tr><td>${esc(d.model)}</td><td colspan="4" style="text-align:center;color:var(--muted)">검침 없음 (기본료만 청구)</td><td>${nf(d.base_fee)}</td><td>0</td><td><button class="btn sm primary" data-act="read" data-id="${d.id}">입력</button></td></tr>`).join('')}
+    <tr class="sum"><td>합계 (VAT 포함)</td><td colspan="5"></td><td colspan="2">${won(b.total)}</td></tr></tbody></table></div></div>`;
+  }).join('');
+  return `<h1>검침·청구</h1><p class="sub">월별 마지막 카운터를 기준으로 지난달 대비 사용량과 초과금을 계산해요.</p>
+  <div class="toolbar"><input type="month" id="monthPick" value="${m}" max="${thisMonth}" aria-label="청구 월"><span style="font-weight:600">총 청구 ${won(grand)}</span></div>
+  ${blocks||'<div class="sec"><div class="empty">장비를 등록하면 여기에 청구 내역이 나와요.</div></div>'}`;
+}
+function vToner(){
+  const ords=S.orders.filter(o=>o.status!=='교체완료');const done=S.orders.length-ords.length;
+  const devs=[...S.devices].sort((a,b)=>(tWorst(a)??101)-(tWorst(b)??101));
+  return `<h1>토너</h1><p class="sub">잔량 20% 이하는 부족, 5% 이하는 교체 필요로 표시돼요. 고객사도 같은 화면을 봐요.</p>
+  <div class="sec"><div class="sec-h"><h2>토너 요청 ${ords.length}건</h2><span style="font-size:13px;color:var(--muted)">교체 완료 ${done}건</span><div class="right"><button class="btn sm primary" data-act="toner-req-admin">요청 등록</button></div></div>
+  <div class="list">${ords.length?ords.map(o=>{const d=dev(o.device_id);return `<div class="item"><div class="main"><div class="t">${(o.colors||[]).map(k=>TC[k]?TC[k].n:k).join(' · ')} <span class="pill ${o.status==='요청'?'new':'go'}">${esc(o.status)}</span></div>
+    <div class="m">${esc(cname(o.client_id))} · ${d?esc(d.model):''} · ${dt(o.created_at)} · ${esc(o.requested_by||'')}</div>${d&&preset(d)?`<div class="m">${(o.colors||[]).map(k=>tSpec(d,k)?tSpec(d,k).code:'').filter(Boolean).join(', ')}</div>`:''}${o.memo?`<div class="m">${esc(o.memo)}</div>`:''}</div>
+    <div class="acts">${o.status==='요청'?`<button class="btn sm primary" data-act="ord" data-id="${o.id}" data-v="발송">발송</button>`:''}<button class="btn sm" data-act="ord" data-id="${o.id}" data-v="교체완료">교체 완료</button></div></div>`}).join(''):'<div class="empty">처리할 토너 요청이 없어요.</div>'}</div></div>
+  <h2 style="margin:18px 0 0">잔량 낮은 순</h2>${devs.length?devs.map(d=>devCard(d)).join(''):'<div class="sec"><div class="empty">등록된 장비가 없어요.</div></div>'}`;
+}
+function tkItem(t){
+  const d=dev(t.device_id);const cls={접수:'new',진행:'go',완료:'done'}[t.status]||'';
+  return `<div class="item"><div class="main"><div class="t">${esc(t.title)} <span class="pill ${cls}">${esc(t.status)}</span></div>
+  <div class="m">${isAdmin()&&ui.mode==='admin'?esc(cname(t.client_id))+' · ':''}${d?esc(d.model)+' · ':''}${dt(t.created_at)}</div>${t.detail?`<div class="m">${esc(t.detail)}</div>`:''}${t.phone&&ui.mode==='admin'?`<div class="m">연락처 ${esc(t.phone)}</div>`:''}${t.session_code?`<div class="m">원격 접속 코드 <b class="num" style="color:var(--ink)">${esc(t.session_code)}</b></div>`:''}</div>
+  ${ui.mode==='admin'?`<div class="acts">${t.status==='접수'?`<button class="btn sm primary" data-act="tk" data-id="${t.id}" data-v="진행">접수 확인</button>`:''}${t.status!=='완료'?`<button class="btn sm" data-act="tk" data-id="${t.id}" data-v="완료">완료</button>`:''}${d?`<button class="btn sm" data-act="remote" data-id="${d.id}">원격</button>`:''}</div>`:''}</div>`;
+}
+function vSupport(){
+  const open=S.tickets.filter(t=>t.status!=='완료'),done=S.tickets.filter(t=>t.status==='완료');
+  return `<h1>원격지원</h1><p class="sub">고객사 화면에서 들어온 요청과 직접 등록한 A/S</p>
+  <div class="sec"><div class="sec-h"><h2>처리 중 ${open.length}건</h2><div class="right"><button class="btn primary" data-act="add-ticket">요청 등록</button></div></div><div class="list">${open.length?open.map(tkItem).join(''):'<div class="empty">처리할 요청이 없어요.</div>'}</div></div>
+  <div class="sec"><div class="sec-h"><h2>완료 ${done.length}건</h2></div><div class="list">${done.length?done.slice(0,30).map(tkItem).join(''):'<div class="empty">완료된 요청이 아직 없어요.</div>'}</div></div>`;
+}
+const FOLDERS=[['inbox','받은 문서'],['archive','보관함'],['trash','휴지통']];
+const fsize=n=>n?(n<1024?n+'B':n<1048576?(n/1024).toFixed(1)+'KB':(n/1048576).toFixed(1)+'MB'):'';
+const fext=f=>{const m=(f.file_name||'').match(/\.([a-z0-9]+)$/i);return m?m[1].toUpperCase():(f.file_path||f.file_data?'PDF':'')};
+function faxItem(f,admin){
+  return `<div class="item"><div class="main"><div class="t">${esc(f.title||f.file_name||'제목 없음')} ${!f.is_read?'<span class="pill new">새 팩스</span>':''}${f.source==='agent'?'<span class="pill">자동 수신</span>':''}</div>
+  <div class="faxrow"><input data-fax-title="${f.id}" value="${esc(f.title||'')}" placeholder="문서명을 입력하세요" aria-label="문서명">
+  <input data-fax-keyword="${f.id}" value="${esc(f.keyword||'')}" placeholder="검색어 (담당자·거래처)" aria-label="검색어"></div>
+  <div class="m">${admin?esc(cname(f.client_id))+' · ':''}${f.from_number?esc(f.from_number)+' · ':''}${dt(f.received_at)}${f.size_bytes?' · '+fsize(f.size_bytes):''}${fext(f)?' · '+fext(f):''}</div></div>
+  <div class="acts">${(f.file_path||f.file_data)?`<button class="btn sm" data-act="fax-open" data-id="${f.id}">열기</button><button class="btn sm" data-act="fax-down" data-id="${f.id}">저장</button><button class="btn sm" data-act="fax-mail" data-id="${f.id}">메일발송</button>`:'<span style="font-size:12px;color:var(--muted)">파일 없음</span>'}
+  ${f.folder==='trash'?`<button class="btn sm" data-act="fax-move" data-id="${f.id}" data-v="inbox">복원</button>${admin?`<button class="btn sm danger" data-act="del-fax" data-id="${f.id}">완전 삭제</button>`:''}`
+   :`<button class="btn sm" data-act="fax-move" data-id="${f.id}" data-v="${f.folder==='archive'?'inbox':'archive'}">${f.folder==='archive'?'받은문서로':'보관'}</button><button class="btn sm danger" data-act="fax-move" data-id="${f.id}" data-v="trash">삭제</button>`}
+  ${!f.is_read&&!admin?`<button class="btn sm" data-act="fax-read" data-id="${f.id}">확인함</button>`:''}</div></div>`;
+}
+function faxBox(list,admin){
+  const q=(ui.faxQ||'').trim();
+  const fil=list.filter(f=>(f.folder||'inbox')===ui.faxFolder)
+    .filter(f=>!q||[f.title,f.keyword,f.file_name,f.from_number].some(v=>(v||'').includes(q)));
+  const cnt=k=>list.filter(f=>(f.folder||'inbox')===k).length;
+  const sel=ui.faxSel;const n=fil.filter(f=>sel.has(f.id)).length;
+  const dis=n?'':'disabled';
+  return `<div class="toolbar">
+    <div class="mode" style="margin:0">${FOLDERS.map(([k,nm])=>`<button data-act="fax-folder" data-v="${k}" aria-pressed="${ui.faxFolder===k}">${nm} ${cnt(k)}</button>`).join('')}</div>
+    <input id="faxQ" value="${esc(ui.faxQ||'')}" placeholder="문서명·검색어·발신번호 검색" style="flex:1;min-width:160px">
+    ${admin?'<button class="btn" data-act="fax-fetch">메일 확인</button><button class="btn primary" data-act="add-fax">팩스 등록</button>':'<button class="btn" data-act="reload">새로고침</button>'}</div>
+  <div class="toolbar" style="margin-bottom:8px">
+    <button class="btn sm" data-act="fax-bulk" data-v="down" ${dis}>다운로드</button>
+    <button class="btn sm" data-act="fax-bulk" data-v="mail" ${dis}>메일발송</button>
+    <button class="btn sm" data-act="fax-bulk" data-v="${ui.faxFolder==='archive'?'inbox':'archive'}" ${dis}>${ui.faxFolder==='archive'?'받은문서로':'보관함으로'}</button>
+    ${ui.faxFolder==='trash'?`<button class="btn sm" data-act="fax-bulk" data-v="inbox" ${dis}>복원</button>${admin?`<button class="btn sm danger" data-act="fax-bulk" data-v="purge" ${dis}>완전 삭제</button>`:''}`
+      :`<button class="btn sm danger" data-act="fax-bulk" data-v="trash" ${dis}>삭제</button>`}
+    <span style="font-size:13px;color:var(--muted)">${n?n+'건 선택됨':'문서를 선택하세요'}</span></div>
+  <div class="scroll"><table class="faxtable"><thead><tr>
+    <th style="width:34px"><input type="checkbox" data-fax-all ${fil.length&&n===fil.length?'checked':''} aria-label="전체 선택"></th>
+    <th>구분</th><th>발신자정보</th><th style="min-width:180px">문서명</th><th style="min-width:150px">검색어</th>
+    <th>기능</th><th>크기(KB)</th><th>확장</th><th>수신한 날짜</th></tr></thead><tbody>
+  ${fil.length?fil.map(f=>`<tr>
+    <td><input type="checkbox" data-fax-sel="${f.id}" ${sel.has(f.id)?'checked':''} aria-label="선택"></td>
+    <td>${admin?(f.client_id?esc(cname(f.client_id)):`<select data-fax-client="${f.id}" aria-label="거래처 지정" style="padding:4px 6px;border:1px solid var(--magenta);border-radius:7px;background:var(--sheet);font-size:12px"><option value="">거래처 지정</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>`):'복합기'}${!f.is_read?' <span class="pill new">새</span>':''}</td>
+    <td>${esc(f.from_number||'-')}</td>
+    <td><input data-fax-title="${f.id}" value="${esc(f.title||'')}" placeholder="제목을 입력해 주세요"></td>
+    <td><input data-fax-keyword="${f.id}" value="${esc(f.keyword||'')}" placeholder="담당자·거래처"></td>
+    <td style="white-space:nowrap">${(f.file_path||f.file_data)?`<button class="btn sm" data-act="fax-open" data-id="${f.id}">보기</button> <button class="btn sm" data-act="fax-down" data-id="${f.id}">저장</button>`:'-'}</td>
+    <td class="num">${f.size_bytes?(f.size_bytes/1024).toFixed(1):'-'}</td>
+    <td>${fext(f)||'-'}</td>
+    <td style="white-space:nowrap">${dt(f.received_at)}</td></tr>`).join('')
+   :'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">문서가 없어요.</td></tr>'}
+  </tbody></table></div>`;
+}
+function vFax(){
+  const un=S.faxes.filter(f=>!f.client_id&&(f.folder||'inbox')!=='trash').length;
+  return `<h1>팩스</h1><p class="sub">메일로 들어온 팩스가 자동으로 쌓여요. 문서명과 검색어를 적어 두면 나중에 찾기 쉬워요.</p>
+  ${un?`<div class="note" style="margin:0 0 12px">거래처가 정해지지 않은 팩스 ${un}건이 있어요. 표의 [거래처 지정]에서 골라 주면 그 회사 화면에 바로 보여요.</div>`:''}
+  <div class="sec">${faxBox(S.faxes,true)}</div>`;
+}
+function vPlatform(){
+  return `<h1>서비스 확장</h1><p class="sub">같은 거래처 정보로 인쇄·인테리어·가구·이사 문의를 한곳에서 받아요.</p>
+  <div class="cats">${S.cats.map(c=>{const n=S.requests.filter(r=>r.category===c.key).length;return `<div class="cat ${c.key==='print_rental'?'on':''}"><div class="ic">${ICONS[c.key]||'📦'}</div><div class="n">${esc(c.name)}</div><div class="d">${c.key==='print_rental'?'운영 중':`문의 ${n}건`}</div></div>`}).join('')}</div>
+  <div class="sec" style="margin-top:14px"><div class="sec-h"><h2>받은 문의</h2></div><div class="list">${S.requests.length?S.requests.map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))} <span class="pill ${r.status==='접수'?'new':r.status==='상담중'?'go':'done'}">${esc(r.status)}</span></div><div class="m">${esc(cname(r.client_id))} · ${dt(r.created_at)}${r.phone?' · '+esc(r.phone):''}</div><div class="m">${esc(r.detail)}</div></div><div class="acts">${r.status==='접수'?`<button class="btn sm primary" data-act="rq" data-id="${r.id}" data-v="상담중">상담 시작</button>`:''}${r.status!=='완료'?`<button class="btn sm" data-act="rq" data-id="${r.id}" data-v="완료">완료</button>`:''}</div></div>`).join(''):'<div class="empty">아직 문의가 없어요.</div>'}</div></div>`;
+}
+function roleSelect(p){
+  return `<select data-role="${p.id}" aria-label="권한" style="padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--sheet)">
+    <option value="admin" ${p.client_role==='admin'?'selected':''}>회사 관리자 (금액 보임)</option>
+    <option value="staff" ${p.client_role!=='admin'?'selected':''}>일반 직원 (금액 숨김)</option></select>`;
+}
+function vAccounts(){
+  const opts=id=>`<option value="">(연결 안 함)</option>`+S.clients.map(c=>`<option value="${c.id}" ${c.id===id?'selected':''}>${esc(c.name)}</option>`).join('');
+  const pend=S.profiles.filter(p=>p.role==='client'&&!p.client_id);
+  return `<h1>계정</h1><p class="sub">고객사 직원이 가입하면 회사와 권한을 지정해 주세요. 한 회사에 여러 계정을 연결할 수 있어요.</p>
+  <div class="sec"><div class="sec-h"><h2>전체 ${S.profiles.length}명</h2>${pend.length?`<span class="pill new">연결 대기 ${pend.length}</span>`:''}</div>
+  <div class="list">${S.profiles.map(p=>`<div class="item"><div class="main"><div class="t">${esc(p.display_name||'(이름 없음)')} ${p.role==='admin'?'<span class="pill mono">우리 회사 관리자</span>':!p.client_id?'<span class="pill new">연결 대기</span>':p.client_role==='admin'?'<span class="pill go">회사 관리자</span>':'<span class="pill">일반 직원</span>'}${p.active===false?' <span class="pill new">사용 중지</span>':''}</div>
+    <div class="m">${p.client_id?esc(cname(p.client_id))+' · ':''}가입 ${dt(p.created_at)}</div></div>
+    <div class="acts">${p.role==='admin'?'':`<select data-link="${p.id}" aria-label="거래처 연결" style="padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--sheet)">${opts(p.client_id)}</select>${roleSelect(p)}<button class="btn sm ${p.active===false?'':'danger'}" data-act="acc-active" data-id="${p.id}" data-v="${p.active===false?'1':'0'}">${p.active===false?'사용 재개':'사용 중지'}</button><button class="btn sm danger" data-act="acc-del" data-id="${p.id}">삭제</button>`}</div></div>`).join('')}</div>
+  <div class="note">고객사 직원에게 사이트 주소를 알려 주고 [고객사 계정 만들기]로 가입하게 하세요. 회사 관리자로 지정하면 그 고객사가 직접 직원 권한을 관리할 수 있어요. [사용 중지]는 계정을 남겨 둔 채 접속만 막고, [삭제]는 로그인 계정까지 완전히 지워요. 삭제는 되돌릴 수 없어요.</div></div>`;
+}
+function vDeviceFocus(d){
+  const u=bill(d.id,thisMonth);
+  return `<div class="toolbar"><button class="btn sm" data-act="portal-all">← 전체 화면 보기</button></div>
+  <h1>${esc(d.model)}</h1><p class="sub">${esc(cname(d.client_id))} ${esc(d.location||'')} · S/N ${esc(d.serial||'-')}</p>
+  ${meters(u?+u.used_mono:0,u?+u.used_color:0,'장 사용')}
+  <div class="sec" style="margin-top:14px"><div class="sec-h"><h2>토너 상태</h2></div>${tonerBlock(d,true)}</div>
+  ${canSeeMoney()&&u?`<div class="sec"><div class="sec-h"><h2>이번 달 이 장비 요금</h2></div><div style="font-size:24px;font-weight:700" class="num">${won(Math.round(+u.supply*1.1))}</div><div style="font-size:13px;color:var(--muted)">VAT 포함 · 흑백 ${nf(u.used_mono)}장 / 컬러 ${nf(u.used_color)}장</div></div>`:''}
+  <div class="sec"><div class="sec-h"><h2>도움이 필요하세요?</h2></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="p-ticket">고장·문제 신고</button><button class="btn" data-act="toner-req" data-id="${d.id}">토너 요청</button></div>
+  <div class="note">신고하시면 담당자가 확인 후 연락드려요.</div></div>`;
+}
+function vPortal(){
+  const cid=isAdmin()?(ui.portalClient&&S.clients.find(c=>c.id===ui.portalClient)?ui.portalClient:(S.clients[0]||{}).id):me.client_id;
+  if(!cid)return `<h1>고객사 화면</h1><div class="sec"><div class="empty">거래처가 등록되면 고객사 화면을 미리 볼 수 있어요.</div></div>`;
+  ui.portalClient=cid;
+  if(ui.deviceView){const fd=S.devices.find(x=>x.id===ui.deviceView&&x.client_id===cid);if(fd)return vDeviceFocus(fd);ui.deviceView=null}
+  const c=S.clients.find(x=>x.id===cid)||{name:''};
+  const devs=S.devices.filter(d=>d.client_id===cid),b=clientBill(cid,thisMonth);
+  const faxes=S.faxes.filter(f=>f.client_id===cid),tks=S.tickets.filter(t=>t.client_id===cid),reqs=S.requests.filter(r=>r.client_id===cid);
+  let mono=0,color=0;b.rows.forEach(r=>{if(r.u){mono+=+r.u.used_mono;color+=+r.u.used_color}});
+  const unread=faxes.filter(f=>!f.is_read).length;
+  const inclM=devs.reduce((a,d)=>a+(+d.incl_mono||0),0),inclC=devs.reduce((a,d)=>a+(+d.incl_color||0),0);
+  let ovM=0,ovC=0,curM=0,curC=0;b.rows.forEach(r=>{if(r.u){ovM+=+r.u.over_mono;ovC+=+r.u.over_color;curM+=+r.u.mono;curC+=+r.u.color}});
+  const firstM=b.rows.length>0&&b.rows.every(r=>r.u&&r.u.first_reading);
+  const noteM=firstM?`설치 첫 달<br>현재 카운터 ${nf(curM)}장`:`무료 ${nf(inclM)}장<br>${ovM?'초과 '+nf(ovM)+'장':'초과 없음'}`;
+  const noteC=firstM?`설치 첫 달<br>현재 카운터 ${nf(curC)}장`:`무료 ${nf(inclC)}장<br>${ovC?'초과 '+nf(ovC)+'장':'초과 없음'}`;
+  return `${isAdmin()?`<div class="toolbar"><select id="portalClient" aria-label="고객사 선택">${S.clients.map(x=>`<option value="${x.id}" ${x.id===cid?'selected':''}>${esc(x.name)}</option>`).join('')}</select><span style="font-size:13px;color:var(--muted)">고객사가 로그인하면 보는 화면이에요</span></div>`:''}
+  <div class="phead"><div class="l"><h1>${esc(c.name)}</h1><p class="sub">${mLabel(thisMonth)} 사용 현황</p></div>
+  ${canSeeMoney()?`<div class="r"><div class="k">이번 달 예상 요금</div><div class="v num">${won(b.total)}</div><div class="n">VAT 포함 · 월말 검침 후 확정</div></div>`:''}</div>
+  ${canSeeMoney()?`<div style="margin:-6px 0 16px"><button class="btn sm" data-act="invoice" data-id="${cid}">청구서 자세히 보기</button></div>`:''}
+  <div class="pcols">
+   <div class="pcol">
+    <div class="sec">${devs.length?devs.map(d=>`${devs.length>1?`<div class="devt">${esc(d.model)} <span>${esc(d.location||'')}</span></div>`:''}${tonerBlock(d,true)}`).join(''):'<div class="empty">설치된 장비가 없어요.</div>'}</div>
+    <div class="sec"><div class="sec-h"><h2>팩스 수신함</h2>${unread?`<span class="pill new">새 팩스 ${unread}</span>`:''}</div>${faxBox(faxes,false)}</div>
+   </div>
+   <div class="pcol">
+    ${meters(mono,color,'장',' col',noteM,noteC)}
+    ${firstM?'<div class="note" style="margin:0">설치한 달이라 사용량이 0으로 나와요. 사용량은 <b>이번 달 카운터 − 지난달 카운터</b>로 계산하기 때문에, 다음 달 1일부터 실제 출력 장수가 쌓입니다. 카운터 자체는 매시간 자동으로 올라오고 있어요.</div>':''}
+    <div class="sec"><div class="sec-h"><h2>원격지원</h2></div><button class="btn primary" style="width:100%;padding:11px" data-act="p-ticket">지원 요청하기</button><div class="list" style="margin-top:13px;border-top:1px solid var(--line);padding-top:4px">${tks.length?tks.slice(0,4).map(tkItem).join(''):'<div class="empty">프린터에 문제가 있으면 요청해 주세요. 담당자가 원격으로 확인해 드려요.</div>'}</div></div>
+    <div class="sec"><div class="sec-h"><h2>다른 서비스도 필요하세요?</h2></div><div class="cats">${S.cats.filter(x=>x.key!=='print_rental'&&x.active).map(x=>`<button class="cat" data-act="p-req" data-id="${x.key}"><div class="ic">${ICONS[x.key]||'📦'}</div><div class="n">${esc(x.name)}</div><div class="d">문의하기</div></button>`).join('')}</div>
+    ${reqs.length?`<div class="list" style="margin-top:12px">${reqs.map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))} <span class="pill ${r.status==='접수'?'new':r.status==='상담중'?'go':'done'}">${esc(r.status)}</span></div><div class="m">${esc(r.detail)}</div></div></div>`).join('')}</div>`:''}</div>
+   </div>
+  </div>
+  ${(()=>{const dl=S.docs.filter(d=>d.client_id===cid&&d.share_with_client);return dl.length?`<div class="sec"><div class="sec-h"><h2>서류</h2></div><div class="list">${dl.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.title)} <span class="pill">${esc(d.category)}</span></div><div class="m">${d.signed_at?'작성일 '+esc(d.signed_at):''}</div></div><div class="acts"><button class="btn sm" data-act="doc-open" data-id="${d.id}">열기</button></div></div>`).join('')}</div></div>`:''})()}
+  <div class="sec"><div class="sec-h"><h2>우리 회사 장비 ${devs.length}대</h2></div>${devs.map(d=>devCard(d,false)).join('')||'<div class="empty">설치된 장비가 없어요.</div>'}</div>
+  ${isClientAdmin()?`<div class="sec"><div class="sec-h"><h2>직원 계정</h2></div><div class="list">${S.profiles.filter(p=>p.client_id===cid).map(p=>`<div class="item"><div class="main"><div class="t">${esc(p.display_name||'(이름 없음)')} ${p.client_role==='admin'?'<span class="pill go">회사 관리자</span>':'<span class="pill">일반 직원</span>'}${p.active===false?' <span class="pill new">사용 중지</span>':''}</div><div class="m">가입 ${dt(p.created_at)}</div></div>
+    <div class="acts">${p.id===me.id?'<span style="font-size:12px;color:var(--muted)">본인</span>':`${roleSelect(p)}<button class="btn sm ${p.active===false?'':'danger'}" data-act="acc-active" data-id="${p.id}" data-v="${p.active===false?'1':'0'}">${p.active===false?'사용 재개':'사용 중지'}</button>`}</div></div>`).join('')}</div>
+    <div class="note">직원이 사이트에서 [고객사 계정 만들기]로 가입하면 이 목록에 나타나요. 일반 직원에게는 요금 정보가 보이지 않아요.</div></div>`:''}
+`;
+}
+
+/* ---------- 시트 / 폼 ---------- */
+const sheet=$('#sheet');
+function closeSheet(){sheet.hidden=true;$('#sheetForm').innerHTML='';$('#sheetView').innerHTML=''}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>el.classList.remove('show'),2600)}
+function field(fd,v){
+  const id='f_'+fd.k,req=fd.req?'required':'';let inp;
+  if(fd.type==='ymd')inp=`<input id="${id}" name="${fd.k}" type="text" data-ymd="1" inputmode="numeric" maxlength="10" placeholder="2026-09-23" value="${esc(v??'')}" ${req}>`;
+  else if(fd.type==='check')inp=`<label style="display:flex;gap:8px;align-items:center;font-weight:500;color:var(--ink)"><input type="checkbox" name="${fd.k}" ${v?'checked':''}>${esc(fd.cap||'')}</label>`;
+  else if(fd.type==='checks')inp=`<div class="checks">${fd.options.map(([ov,ol])=>`<label><input type="checkbox" name="${fd.k}" value="${esc(ov)}" ${(v||[]).includes(ov)?'checked':''}>${esc(ol)}</label>`).join('')}</div>`;
+  else if(fd.type==='select')inp=`<select id="${id}" name="${fd.k}" ${req}>${fd.options.map(([ov,ol])=>`<option value="${esc(ov)}" ${String(v)===String(ov)?'selected':''}>${esc(ol)}</option>`).join('')}</select>`;
+  else if(fd.type==='textarea')inp=`<textarea id="${id}" name="${fd.k}" ${req} placeholder="${esc(fd.ph||'')}">${esc(v)}</textarea>`;
+  else if(fd.type==='file')inp=`<input id="${id}" name="${fd.k}" type="file" ${fd.accept===''?'':`accept="${fd.accept||'application/pdf,image/*'}"`} ${req}>`;
+  else inp=`<input id="${id}" name="${fd.k}" type="${fd.type||'text'}" ${fd.type==='number'?'inputmode="numeric" min="0" step="1"':''} ${fd.max?`max="${fd.max}"`:''} value="${esc(v??'')}" ${fd.list?`list="${fd.list}"`:''} ${req} placeholder="${esc(fd.ph||'')}">`;
+  return `<div class="f"><label for="${id}">${esc(fd.label)}</label>${inp}${fd.hint?`<div style="font-size:12px;color:var(--muted)">${esc(fd.hint)}</div>`:''}</div>`;
+}
+function openForm(title,fields,init,onSave,{submit='저장',extra='',intro=''}={}){
+  $('#sheetTitle').textContent=title;$('#sheetView').innerHTML=intro?`<div class="note" style="margin:0 0 12px">${esc(intro)}</div>`:'';
+  const f=$('#sheetForm');const html=[];
+  for(let i=0;i<fields.length;i++){const fd=fields[i];if(fd.pair&&fields[i+1]){html.push(`<div class="frow">${field(fd,init[fd.k])}${field(fields[i+1],init[fields[i+1].k])}</div>`);i++}else html.push(field(fd,init[fd.k]))}
+  f.innerHTML=html.join('')+`<div class="row-end">${extra}<button type="button" class="btn ghost" data-close>취소</button><button class="btn primary" type="submit">${esc(submit)}</button></div>`;
+  f.onsubmit=async e=>{e.preventDefault();
+    const data={};for(const fd of fields){
+      if(fd.type==='checks'){data[fd.k]=[...f.querySelectorAll(`input[name="${fd.k}"]:checked`)].map(i=>i.value);continue}
+      if(fd.type==='check'){data[fd.k]=f.elements[fd.k].checked;continue}
+      if(fd.type==='ymd'){const raw=(f.elements[fd.k].value||'').replace(/[^0-9]/g,'');
+        if(raw.length===0){data[fd.k]=null;continue}
+        if(raw.length!==8){const e=new Error('ymd');e.userMsg=`${fd.label}은 2026-09-23 또는 20260923 형식으로 입력하세요.`;throw e}
+        data[fd.k]=raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8);continue}
+      const el=f.elements[fd.k];if(!el)continue;
+      if(fd.type==='file')data[fd.k]=el.files[0]||null;else if(fd.type==='number')data[fd.k]=el.value===''?null:Number(el.value);else data[fd.k]=el.value.trim()||null}
+    const btn=f.querySelector('[type=submit]');btn.disabled=true;
+    try{await onSave(data);closeSheet();toast(submit==='저장'?'저장했어요':submit+' 완료');await load()}
+    catch(err){btn.disabled=false;toast(err.userMsg||errMsg(err));console.error(err)}};
+  sheet.hidden=false;setTimeout(()=>{const x=f.querySelector('input,select,textarea');x&&x.focus()},50);
+}
+function mailForm(ids){
+  const first=S.faxes.find(x=>x.id===ids[0]);if(!first)return;
+  openForm(ids.length>1?`팩스 ${ids.length}건 메일로 보내기`:'팩스 메일로 보내기',[
+    {k:'to',label:'받는 사람 이메일',type:'email',req:true,ph:'hong@example.com (여러 명은 쉼표로 구분)'},
+    {k:'subject',label:'제목',ph:`[팩스 전달] ${first.title||first.file_name||''}`},
+    {k:'message',label:'메모',type:'textarea',ph:'수신된 팩스를 전달드립니다.'}],{},
+    async x=>{
+      let fail=0,why='';
+      for(const fid of ids){
+        const r=await sb.functions.invoke('send-fax-mail',{body:{fax_id:fid,to:x.to,subject:x.subject,message:x.message}});
+        if(r.error){
+          fail++;
+          if(!why){
+            why=errMsg(r.error);
+            try{const c=r.error.context;
+              if(c&&typeof c.json==='function'){const j=await c.json();if(j&&j.error)why=j.error}
+              else if(c&&typeof c.text==='function'){const t=await c.text();if(t)why=t.slice(0,300)}
+            }catch(_){}
+          }
+        }else if(r.data&&r.data.error){fail++;if(!why)why=r.data.error}
+      }
+      if(fail){const e=new Error('mail');e.userMsg=`${fail}건 실패: ${why||'원인을 알 수 없어요'}`;throw e}
+      ui.faxSel.clear();
+    },{submit:'보내기',intro:'팩스 파일이 PDF로 첨부되어 전송돼요.'});
+}
+function b64url(data,name){
+  const bin=atob(data);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  const type=/\.(jpe?g)$/i.test(name||'')?'image/jpeg':/\.png$/i.test(name||'')?'image/png':/\.tiff?$/i.test(name||'')?'image/tiff':'application/pdf';
+  return URL.createObjectURL(new Blob([arr],{type}));
+}
+function openView(title,html,noClose){$('#sheetTitle').textContent=title;$('#sheetForm').innerHTML='';$('#sheetView').innerHTML=html+(noClose?'':`<div class="row-end"><button class="btn primary" data-close>닫기</button></div>`);sheet.hidden=false}
+let pendingYes=null;
+function ask(msg,label,fn){
+  pendingYes=fn;
+  openView('확인',`<p style="font-size:15px;margin:0 0 16px">${esc(msg)}</p><div class="row-end"><button class="btn ghost" data-close>취소</button><button class="btn primary" data-act="ask-yes">${esc(label||'확인')}</button></div>`,true);
+}
+const uerr=m=>{const e=new Error(m);e.userMsg=m;return e};
+const clientOpts=()=>S.clients.map(c=>[c.id,c.name]);
+const nz=v=>v==null?0:v;
+
+function clientForm(c){
+  openForm(c?'거래처 수정':'거래처 추가',[
+    {k:'name',label:'상호',req:true},{k:'biz_no',label:'사업자번호'},
+    {k:'contact',label:'담당자',pair:true},{k:'phone',label:'연락처',type:'tel'},
+    {k:'email',label:'청구서 받을 이메일',type:'email'},{k:'address',label:'주소'},{k:'memo',label:'메모',type:'textarea'}],
+    c||{},async d=>{if(c)await q(sb.from('clients').update(d).eq('id',c.id));else await q(sb.from('clients').insert(d))},
+    {extra:c?`<button type="button" class="btn danger ghost" data-act="del-client" data-id="${c.id}" style="margin-right:auto">삭제</button>`:''});
+}
+function deviceForm(d){
+  if(!S.clients.length){toast('거래처를 먼저 추가하세요');return}
+  openForm(d?'장비 수정':'장비 등록',[
+    {k:'client_id',label:'거래처',type:'select',options:clientOpts(),req:true},
+    {k:'model',label:'모델명',req:true,list:'models',ph:'예: 삼성 SL-X6250LX'},
+    {k:'color_type',label:'종류',type:'select',options:[['컬러','컬러 복합기 (흑백+컬러 출력)'],['흑백','흑백 전용']],pair:true},{k:'serial',label:'시리얼 번호',hint:'수집 프로그램이 이 번호로 장비를 찾아요'},
+    {k:'location',label:'설치 위치',pair:true,ph:'예: 2층 사무실'},{k:'ip',label:'IP 주소',ph:'192.168.0.200'},
+    {k:'base_fee',label:'월 기본료 (원)',type:'number',req:true},
+    {k:'incl_mono',label:'무료 흑백 (장)',type:'number',pair:true},{k:'incl_color',label:'무료 컬러 (장)',type:'number'},
+    {k:'rate_mono',label:'초과 흑백 장당 (원)',type:'number',pair:true},{k:'rate_color',label:'초과 컬러 장당 (원)',type:'number'},
+    {k:'deposit',label:'보증금 (원)',type:'number',hint:'부가세 별도 금액'},
+    {k:'contract_start',label:'계약 시작일',type:'ymd',pair:true},{k:'contract_end',label:'계약 종료일',type:'ymd'}],
+    d||{client_id:ui.devFilter||S.clients[0].id,color_type:'컬러',model:'삼성 SL-X6250LX',base_fee:210000,incl_mono:3000,incl_color:100,rate_mono:10,rate_color:100,deposit:300000},
+    async x=>{['base_fee','incl_mono','incl_color','rate_mono','rate_color','deposit'].forEach(k=>x[k]=nz(x[k]));
+      if(d)await q(sb.from('devices').update(x).eq('id',d.id));else await q(sb.from('devices').insert(x))},
+    {extra:d?`<button type="button" class="btn danger ghost" data-act="del-device" data-id="${d.id}" style="margin-right:auto">삭제</button>`:''});
+}
+function readAtFor(m){
+  if(m===thisMonth)return new Date().toISOString();
+  const [y,mm]=m.split('-').map(Number);const last=new Date(y,mm,0).getDate();
+  return `${m}-${String(last).padStart(2,'0')}T23:00:00+09:00`;
+}
+function readForm(did){
+  const d=dev(did);if(!d)return;const m0=ui.tab==='billing'?ui.month:thisMonth;
+  const cur=bill(did,m0);
+  openForm(`${d.model} 검침`,[
+    {k:'month',label:'검침 월',type:'month',req:true,max:thisMonth},
+    {k:'mono',label:'흑백 누적 카운터',type:'number',req:true,pair:true},
+    {k:'color',label:'컬러 누적 카운터',type:'number'}],
+    {month:m0,mono:cur?cur.mono:'',color:cur?cur.color:(d.color_type==='흑백'?0:'')},
+    async x=>{
+      if(!x.month||x.month>thisMonth)throw uerr('앞으로의 달은 입력할 수 없어요.');
+      const prev=S.bills.filter(b=>b.device_id===did&&b.month<x.month).sort((a,b)=>a.month<b.month?1:-1)[0];
+      if(prev&&(x.mono<+prev.mono||nz(x.color)<+prev.color))throw uerr(`지난 검침(흑백 ${nf(prev.mono)}, 컬러 ${nf(prev.color)})보다 작아요. 숫자를 확인하세요.`);
+      await q(sb.from('meter_readings').insert({device_id:did,client_id:d.client_id,mono:x.mono,color:nz(x.color),read_at:readAtFor(x.month),source:isAdmin()?'manual':'client'}))},
+    {intro:'복합기의 누적 카운터를 입력하세요. 같은 달에 여러 번 입력하면 마지막 값이 청구에 쓰여요.'});
+}
+function invoice(cid){
+  const c=S.clients.find(x=>x.id===cid);if(!c)return;
+  const m=ui.mode==='admin'&&ui.tab==='billing'?ui.month:thisMonth;const b=clientBill(cid,m);
+  openView('청구서',`<div class="inv num"><div class="hd"><div><div style="font-weight:700;font-size:16px">${esc(c.name)} 귀중</div><div style="color:var(--muted)">${mLabel(m)} 복합기 렌탈 사용료</div></div><div style="text-align:right;color:var(--muted)">${esc(c.biz_no||'')}</div></div>
+  ${b.rows.map(({d,u})=>`<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div style="font-weight:600">${esc(d.model)} · ${esc(d.location||'')}</div>
+  <div style="display:flex;justify-content:space-between"><span>기본료</span><span>${won(d.base_fee)}</span></div>
+  ${u?`<div style="display:flex;justify-content:space-between;color:var(--muted)"><span>흑백 ${nf(u.used_mono)}장 (초과 ${nf(u.over_mono)}장 × ${nf(d.rate_mono)}원)</span><span>${won(u.over_mono*d.rate_mono)}</span></div>
+  <div style="display:flex;justify-content:space-between;color:var(--muted)"><span>컬러 ${nf(u.used_color)}장 (초과 ${nf(u.over_color)}장 × ${nf(d.rate_color)}원)</span><span>${won(u.over_color*d.rate_color)}</span></div>`:'<div style="color:var(--muted)">검침 전 · 기본료만 반영</div>'}</div>`).join('')}
+  <div style="display:flex;justify-content:space-between;margin-top:10px"><span>공급가액</span><span>${won(b.supply)}</span></div>
+  <div style="display:flex;justify-content:space-between"><span>부가세 10%</span><span>${won(b.vat)}</span></div>
+  <div class="tot"><span>청구 금액</span><span>${won(b.total)}</span></div></div>
+  <div class="row-end" style="margin-top:12px"><button class="btn" onclick="window.print()">인쇄</button></div>`);
+}
+function remote(did){
+  const d=dev(did);if(!d)return;const open=S.tickets.find(t=>t.device_id===did&&t.status!=='완료');
+  openView(`${d.model} 원격지원`,`<div style="font-size:14px">
+  <div class="sec"><h2 style="font-size:15px;margin-bottom:6px">프린터 관리 화면</h2><div style="color:var(--muted)">장비 IP ${esc(d.ip||'미등록')} · 고객사 네트워크(VPN) 안에서만 열려요.</div>
+  ${d.ip?`<a class="btn sm" style="display:inline-block;margin-top:8px;text-decoration:none" href="http://${esc(d.ip)}" target="_blank" rel="noopener">관리 화면 열기</a>`:''}</div>
+  <div class="sec"><h2 style="font-size:15px;margin-bottom:6px">PC 원격 접속</h2><div style="color:var(--muted)">고객 PC의 원격 프로그램 접속 코드를 받아 연결하고, 코드를 요청 건에 기록해 두세요.</div>
+  ${open?`<div style="margin-top:8px">진행 중 요청: <b>${esc(open.title)}</b></div><button class="btn sm primary" style="margin-top:8px" data-act="tk-code" data-id="${open.id}">접속 코드 기록</button>`:`<button class="btn sm primary" style="margin-top:8px" data-act="add-ticket" data-id="${did}">지원 요청 만들기</button>`}</div></div>`);
+}
+function ticketForm(preDev,portal){
+  const cid=portal?ui.portalClient:null;
+  const devOpts=S.devices.filter(d=>portal?d.client_id===cid:true).map(d=>[d.id,(portal?'':cname(d.client_id)+' · ')+d.model+(d.location?' ('+d.location+')':'')]);
+  if(!devOpts.length){toast('등록된 장비가 없어요');return}
+  openForm('원격지원 요청',[
+    {k:'device_id',label:'장비',type:'select',options:devOpts},
+    {k:'title',label:'증상',req:true,ph:'예: 스캔이 이메일로 안 가요'},
+    {k:'detail',label:'자세한 내용',type:'textarea',ph:'언제부터, 어떤 메시지가 나오는지'},
+    {k:'phone',label:'연락받을 번호',type:'tel'}],
+    {device_id:preDev||devOpts[0][0]},
+    async x=>{await q(sb.from('tickets').insert({...x,client_id:dev(x.device_id).client_id,status:'접수',channel:portal&&!isAdmin()?'고객사':'관리자'}))},
+    {submit:portal?'요청 보내기':'저장'});
+}
+function tonerForm(did){
+  const d=dev(did);if(!d)return;const keys=tonerKeys(d);
+  openForm(`${d.model} 토너 잔량`,keys.map((k,i)=>({k,label:`${TC[k].n} (%)`,type:'number',req:true,pair:i%2===0&&i+1<keys.length})),
+    Object.fromEntries(keys.map(k=>[k,tLevel(d,k)??''])),
+    async x=>{for(const k in x)if(x[k]<0||x[k]>100)throw uerr('0에서 100 사이로 입력하세요.');
+      await q(sb.rpc('set_toner',{p_device:did,p_k:x.K??null,p_c:x.C??null,p_m:x.M??null,p_y:x.Y??null}))},
+    {intro:'복합기 화면에서 [장비 상태] → [소모품 정보]를 누르면 색상별 잔량(%)이 보여요.'});
+}
+function tonerReqForm(did,portal){
+  let d=did?dev(did):null;const fields=[];
+  if(!d){const opts=S.devices.map(x=>[x.id,cname(x.client_id)+' · '+x.model]);if(!opts.length){toast('등록된 장비가 없어요');return}fields.push({k:'device_id',label:'장비',type:'select',options:opts});d=dev(opts[0][0])}
+  fields.push({k:'colors',label:'필요한 토너',type:'checks',options:tonerKeys(d).length===1?[['K','검정']]:['K','C','M','Y'].map(k=>[k,TC[k].n])},{k:'memo',label:'메모',ph:'예: 오늘 중 배송 부탁드려요'});
+  const pre=lowKeys(d);
+  openForm('토너 요청',fields,{device_id:d.id,colors:pre.length?pre:['K']},async x=>{
+    const dd=dev(x.device_id||d.id);if(!x.colors.length)throw uerr('토너 색을 하나 이상 선택하세요.');
+    await q(sb.from('toner_orders').insert({device_id:dd.id,client_id:dd.client_id,colors:x.colors,memo:x.memo,status:'요청',requested_by:isAdmin()?'관리자':'고객사'}))},{submit:portal?'요청 보내기':'저장'});
+}
+function faxForm(){
+  if(!S.clients.length){toast('거래처를 먼저 추가하세요');return}
+  openForm('수신 팩스 등록',[{k:'client_id',label:'받는 거래처',type:'select',options:clientOpts()},{k:'title',label:'문서명',ph:'예: 김철수 산재 신청서'},{k:'from_number',label:'발신 번호',type:'tel',pair:true},{k:'pages',label:'쪽수',type:'number'},{k:'file',label:'팩스 파일 (PDF·이미지)',type:'file',req:true}],{pages:1},async x=>{
+    const safe=x.file.name.replace(/[^\w.\-]/g,'_');const path=`${x.client_id}/${Date.now()}_${safe}`;
+    await q(sb.storage.from('faxes').upload(path,x.file,{contentType:x.file.type||'application/pdf'}));
+    await q(sb.from('faxes').insert({client_id:x.client_id,title:x.title,from_number:x.from_number,pages:x.pages||1,file_path:path,file_name:x.file.name,size_bytes:x.file.size}));
+  });
+}
+function reqForm(cat){
+  openForm(`${catName(cat)} 문의`,[{k:'detail',label:'필요한 내용',type:'textarea',req:true,ph:'일정, 규모, 예산 등을 적어 주세요'},{k:'phone',label:'연락받을 번호',type:'tel'}],{},
+    async x=>{await q(sb.from('service_requests').insert({...x,category:cat,client_id:ui.portalClient,status:'접수'}))},{submit:'문의 보내기'});
+}
+const DOC_CATS=['렌탈계약서','CMS이체신청서','통장사본','사업자등록증','견적서','인수인계확인서','기타'];
+function docsView(cid){
+  const list=S.docs.filter(d=>d.client_id===cid);
+  openView(`${cname(cid)} 서류함`,`<p class="sub" style="margin-bottom:12px">계약서, CMS 이체신청서 등을 보관해요. PDF나 사진으로 올리면 언제든 다시 열어볼 수 있어요.</p>
+  <div class="list">${list.length?list.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.title)} <span class="pill">${esc(d.category)}</span>${d.share_with_client?' <span class="pill go">고객 공개</span>':''}</div>
+  <div class="m">${d.signed_at?'작성일 '+esc(d.signed_at)+' · ':''}등록 ${dt(d.created_at)}</div>${d.note?`<div class="m">${esc(d.note)}</div>`:''}</div>
+  <div class="acts"><button class="btn sm" data-act="doc-open" data-id="${d.id}">열기</button><button class="btn sm" data-act="doc-edit" data-id="${d.id}">수정</button><button class="btn sm danger" data-act="doc-del" data-id="${d.id}">삭제</button></div></div>`).join(''):'<div class="empty">보관된 서류가 없어요.</div>'}</div>
+  <button class="btn primary" style="margin-top:12px" data-act="doc-add" data-id="${cid}">서류 올리기</button>`);
+}
+function docForm(cid,doc){
+  closeSheet();
+  openForm(doc?'서류 수정':`${cname(cid)} 서류 올리기`,[
+    {k:'category',label:'종류',type:'select',options:DOC_CATS.map(c=>[c,c])},
+    {k:'title',label:'제목',req:true,ph:'예: 2026년 렌탈계약서'},
+    {k:'signed_at',label:'작성일',type:'ymd'},
+    {k:'note',label:'메모',ph:'예: 원본은 사무실 보관'},
+    {k:'share_with_client',label:'고객사 공개',type:'check',cap:'고객사 화면에서도 볼 수 있게 하기'},
+    {k:'file',label:doc?'파일 교체 (안 고르면 기존 파일 유지)':'파일 (PDF, 워드, 엑셀, 한글, 사진 등)',type:'file',accept:'',req:!doc}],
+    doc||{category:'렌탈계약서'},
+    async x=>{
+      const row={category:x.category,title:x.title,signed_at:x.signed_at||null,note:x.note,share_with_client:!!x.share_with_client};
+      if(x.file){
+        const safe=x.file.name.replace(/[^\w.\-]/g,'_');const path=`${cid}/${Date.now()}_${safe}`;
+        await q(sb.storage.from('docs').upload(path,x.file,{contentType:x.file.type||'application/octet-stream'}));
+        row.file_path=path;
+      }
+      if(doc){
+        await q(sb.from('client_documents').update(row).eq('id',doc.id));
+        if(x.file&&doc.file_path){try{await sb.storage.from('docs').remove([doc.file_path])}catch(_){}}
+      }else{
+        await q(sb.from('client_documents').insert({client_id:cid,...row}));
+      }
+    },{submit:doc?'저장':'올리기'});
+}
+function qrView(did){
+  const d=dev(did);if(!d)return;
+  const url=location.origin+location.pathname+'#device='+did;
+  openView(`${d.model} QR 코드`,`<p class="sub" style="margin-bottom:12px">복합기 옆에 붙여 두면 직원이 휴대폰으로 찍어 토너 상태를 보고 고장 신고를 할 수 있어요. 로그인하면 이 장비 화면이 바로 열려요.</p>
+  <div style="text-align:center"><img id="qrImg" alt="QR 코드" style="width:220px;height:220px;background:#fff;padding:8px;border-radius:12px"></div>
+  <div class="token" style="margin-top:10px">${esc(url)}</div>
+  <div class="row-end"><button class="btn sm" data-act="copy" data-v="${esc(url)}">주소 복사</button><button class="btn sm" onclick="window.print()">인쇄</button></div>`);
+  if(window.QRCode){QRCode.toDataURL(url,{width:440,margin:1},(e,u)=>{const img=$('#qrImg');if(img&&u)img.src=u})}
+}
+function mailsView(cid){
+  const list=S.mails.filter(m=>m.client_id===cid);
+  openView(`${cname(cid)} 팩스 메일 계정`,`<p class="sub" style="margin-bottom:12px">이 거래처 복합기가 팩스를 보내는 메일 계정이에요. 여기서 읽은 팩스는 전부 이 회사 것으로 자동 등록돼요.</p>
+  ${list.length?list.map(m=>`<div class="sec"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <b>${esc(m.label||m.username)}</b>${m.active?'':'<span class="pill">사용 중지</span>'}
+    <span style="font-size:12px;color:var(--muted);margin-left:auto">${m.last_run_at?dt(m.last_run_at):'아직 실행 없음'}</span></div>
+    <div class="m" style="font-size:13px;color:var(--muted)">${esc(m.username)} · ${esc(m.host)}${m.from_filter?' · 보낸사람 '+esc(m.from_filter):''}</div>
+    ${m.last_result?`<div class="m" style="font-size:13px;color:${m.last_result.startsWith('실패')?'var(--magenta)':'var(--muted)'}">${esc(m.last_result)}</div>`:''}
+    <div class="row-end"><button class="btn sm" data-act="mail-edit" data-id="${m.id}">수정</button><button class="btn sm danger" data-act="mail-del" data-id="${m.id}">삭제</button></div></div>`).join(''):'<div class="empty">등록된 계정이 없어요.</div>'}
+  <button class="btn primary" style="margin-top:12px" data-act="mail-add" data-id="${cid}">메일 계정 추가</button>`);
+}
+function mailForm2(cid,m){
+  closeSheet();
+  openForm(m?'팩스 메일 계정 수정':`${cname(cid)} 팩스 메일 계정 추가`,[
+    {k:'client_id',label:'거래처',type:'select',options:clientOpts(),req:true},
+    {k:'label',label:'이름',ph:'예: 시흥지사 복합기 메일'},
+    {k:'username',label:'메일 주소',type:'email',req:true,ph:'example@naver.com'},
+    {k:'password',label:m?'애플리케이션 비밀번호 (바꿀 때만 입력)':'애플리케이션 비밀번호',req:!m,
+      hint:'네이버 내정보 → 보안설정 → 애플리케이션 비밀번호에서 발급'},
+    {k:'host',label:'메일 서버',pair:true,ph:'imap.naver.com'},{k:'from_filter',label:'보낸사람만 읽기',ph:'복합기 발신 주소 (비우면 안 읽은 메일 전체)'},
+    {k:'active',label:'사용',type:'check',cap:'이 계정에서 팩스를 가져오기'}],
+    m?{...m,password:''}:{client_id:cid,host:'imap.naver.com',active:true},
+    async x=>{
+      await q(sb.rpc('mail_account_save',{p_id:m?m.id:null,p_client_id:x.client_id,p_label:x.label,
+        p_host:x.host,p_username:x.username,p_password:x.password||'',p_folder:'INBOX',
+        p_from_filter:x.from_filter,p_active:!!x.active}));
+    },{submit:'저장'});
+}
+function agentsView(cid){
+  const list=S.agents.filter(a=>a.client_id===cid);
+  openView(`${cname(cid)} 수집 토큰`,`<p class="sub" style="margin-bottom:12px">고객사 PC의 수집 프로그램에 이 토큰을 넣으면 카운터와 토너 잔량이 자동으로 올라와요. 토큰은 비밀번호처럼 관리하세요.</p>
+  ${list.length?list.map(a=>`<div class="sec"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><b>${esc(a.name||'수집 프로그램')}</b>${a.active?'':'<span class="pill">중지됨</span>'}<span style="font-size:12px;color:var(--muted);margin-left:auto">${a.last_seen_at?'최근 보고 '+dt(a.last_seen_at):'아직 보고 없음'}</span></div>
+  <div class="token">${esc(a.token)}</div><div class="row-end"><button class="btn sm" data-act="copy" data-v="${esc(a.token)}">복사</button>${a.active?`<button class="btn sm danger" data-act="agent-off" data-id="${a.id}">사용 중지</button>`:''}</div></div>`).join(''):'<div class="empty">아직 토큰이 없어요.</div>'}
+  <button class="btn primary" data-act="agent-new" data-id="${cid}">새 토큰 만들기</button>`);
+}
+
+/* ---------- 이벤트 ---------- */
+document.addEventListener('click',async e=>{
+  if(e.target.closest('[data-close]')){pendingYes=null;closeSheet();return}
+  if(e.target.closest('[data-act="ask-yes"]')){const fn=pendingYes;pendingYes=null;closeSheet();
+    if(fn){try{await fn()}catch(err){toast(err.userMsg||errMsg(err));console.error(err)}}return}
+  const m=e.target.closest('[data-mode]');if(m){ui.mode=m.dataset.mode;render();scrollTo(0,0);return}
+  const t=e.target.closest('[data-tab]');if(t){ui.tab=t.dataset.tab;ui.mode='admin';render();scrollTo(0,0);return}
+  const a=e.target.closest('[data-act]');if(!a)return;
+  const id=a.dataset.id,v=a.dataset.v;
+  try{switch(a.dataset.act){
+    case'auth-login':ui.authMode='login';showLogin();break;
+    case'auth-signup':ui.authMode='signup';showLogin();break;
+    case'logout':await sb.auth.signOut();me=null;ui.authMode='login';showLogin();break;
+    case'add-client':clientForm();break;
+    case'edit-client':clientForm(S.clients.find(c=>c.id===id));break;
+    case'del-client':if(S.devices.some(d=>d.client_id===id)){toast('장비가 남아 있는 거래처는 삭제할 수 없어요');break}
+      ask('이 거래처를 삭제할까요? 관련 기록도 함께 지워져요.','삭제',async()=>{await q(sb.from('clients').delete().eq('id',id));toast('삭제했어요');await load()});break;
+    case'add-device':deviceForm();break;
+    case'edit-device':deviceForm(dev(id));break;
+    case'del-device':ask('이 장비와 검침 기록을 삭제할까요?','삭제',async()=>{await q(sb.from('devices').delete().eq('id',id));toast('삭제했어요');await load()});break;
+    case'read':readForm(id);break;
+    case'invoice':invoice(id);break;
+    case'remote':remote(id);break;
+    case'add-ticket':closeSheet();ticketForm(id,false);break;
+    case'tk':await q(sb.from('tickets').update({status:v,updated_at:new Date().toISOString()}).eq('id',id));toast(v==='완료'?'완료 처리했어요':'접수 확인했어요');await load();break;
+    case'tk-code':closeSheet();openForm('원격 접속 코드',[{k:'session_code',label:'접속 코드',req:true}],S.tickets.find(x=>x.id===id)||{},async x=>{await q(sb.from('tickets').update({session_code:x.session_code,status:'진행',updated_at:new Date().toISOString()}).eq('id',id))});break;
+    case'toner-in':tonerForm(id);break;
+    case'toner-req':tonerReqForm(id,true);break;
+    case'toner-req-admin':tonerReqForm(null,false);break;
+    case'ord':{const o=S.orders.find(x=>x.id===id);await q(sb.from('toner_orders').update({status:v,updated_at:new Date().toISOString()}).eq('id',id));
+      if(v==='교체완료'&&o){const d=dev(o.device_id);if(d){const lv={};['K','C','M','Y'].forEach(k=>lv[k]=(o.colors||[]).includes(k)?100:tLevel(d,k));
+        if(d.color_type==='흑백'){lv.C=lv.M=lv.Y=null}
+        await q(sb.rpc('set_toner',{p_device:d.id,p_k:lv.K,p_c:lv.C,p_m:lv.M,p_y:lv.Y}))}}
+      toast(v==='발송'?'발송 처리했어요':'교체 완료, 잔량을 100%로 바꿨어요');await load();break}
+    case'add-fax':faxForm();break;
+    case'del-fax':ask('이 팩스를 삭제할까요?','삭제',async()=>{const f=S.faxes.find(x=>x.id===id);if(f&&f.file_path){try{await sb.storage.from('faxes').remove([f.file_path])}catch(_){}}await q(sb.from('faxes').delete().eq('id',id));toast('삭제했어요');await load()});break;
+    case'fax-fetch':{
+      const btn=a;btn.disabled=true;btn.textContent='확인 중…';
+      let ok=false,msg='',lines=[],saved=0;
+      try{
+        const r=await sb.functions.invoke('fetch-fax-mail');
+        if(r.error){
+          msg=errMsg(r.error);
+          try{
+            const c=r.error.context;
+            if(c&&typeof c.json==='function'){const j=await c.json();if(j){if(j.error)msg=j.error;if(j.log)lines=j.log}}
+            else if(c&&typeof c.text==='function'){const t=await c.text();if(t)msg=t.slice(0,500)}
+          }catch(_){}
+        }else{
+          const d=r.data||{};
+          lines=d.log||[];
+          if(d.error){msg=d.error}else{ok=true;saved=d.saved||0}
+        }
+      }catch(err){msg=errMsg(err);console.error(err)}
+      const body=lines.length?lines.map(l=>`<div style="font-size:13px;color:var(--muted);margin-top:4px">${esc(l)}</div>`).join(''):'';
+      if(ok){
+        openView('메일 확인 결과',`<div style="font-size:16px;font-weight:600;margin-bottom:8px">새로 등록한 팩스 ${saved}건</div>${body||'<div class="empty">기록이 없어요.</div>'}`);
+        await load();
+      }else{
+        openView('메일 확인 실패',`<div class="note" style="margin:0 0 8px;word-break:break-all">${esc(msg||'알 수 없는 오류')}</div>${body}`);
+        btn.disabled=false;btn.textContent='메일 확인';
+      }
+      break}
+    case'reload':{const b2=a;b2.disabled=true;b2.textContent='확인 중…';
+      try{
+        // 메일함을 지금 확인하도록 요청 (결과는 기다리지 않음)
+        try{await sb.functions.invoke('fetch-fax-mail',{headers:{'x-background':'1'}})}catch(_){}
+        await new Promise(r=>setTimeout(r,4000));
+        await load();
+        toast('최신 내용으로 새로고침했어요');
+      }catch(err){toast(errMsg(err))}
+      break}
+    case'fax-folder':ui.faxFolder=v;ui.faxSel.clear();render();break;
+    case'fax-bulk':{const ids=[...ui.faxSel];if(!ids.length)break;
+      if(v==='down'){for(const fid of ids){const f=S.faxes.find(x=>x.id===fid);if(!f)continue;
+        const name=f.file_name||((f.title||'fax')+'.pdf');
+        if(f.file_data){const url=b64url(f.file_data,name);const a2=document.createElement('a');a2.href=url;a2.download=name;a2.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
+        else if(f.file_path){const {data}=await sb.storage.from('faxes').createSignedUrl(f.file_path,600,{download:name});if(data){const a2=document.createElement('a');a2.href=data.signedUrl;a2.download=name;a2.click()}}
+        await new Promise(r=>setTimeout(r,400))}
+        toast(ids.length+'건 저장했어요');break}
+      if(v==='mail'){mailForm(ids);break}
+      if(v==='purge'){ask(`선택한 ${ids.length}건을 완전히 삭제할까요?`,'완전 삭제',async()=>{
+        for(const fid of ids){const f=S.faxes.find(x=>x.id===fid);if(f&&f.file_path){try{await sb.storage.from('faxes').remove([f.file_path])}catch(_){}}
+          await q(sb.from('faxes').delete().eq('id',fid))}
+        ui.faxSel.clear();toast('삭제했어요');await load()});break}
+      for(const fid of ids)await q(sb.rpc('fax_update',{p_id:fid,p_title:null,p_keyword:null,p_folder:v}));
+      ui.faxSel.clear();toast(v==='trash'?'휴지통으로 옮겼어요':v==='archive'?'보관함으로 옮겼어요':'받은 문서로 옮겼어요');await load();break}
+    case'fax-mail':mailForm([id]);break;
+    case'fax-down':{const f=S.faxes.find(x=>x.id===id);if(!f)break;
+      const name=f.file_name||((f.title||'fax')+'.pdf');
+      if(f.file_data){const url=b64url(f.file_data,name);const a2=document.createElement('a');a2.href=url;a2.download=name;a2.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
+      else if(f.file_path){const {data,error}=await sb.storage.from('faxes').createSignedUrl(f.file_path,600,{download:name});if(error)throw error;const a2=document.createElement('a');a2.href=data.signedUrl;a2.download=name;a2.click()}
+      break}
+    case'fax-move':{const f=S.faxes.find(x=>x.id===id);
+      if(v==='trash'&&f&&f.folder!=='trash'){await q(sb.rpc('fax_update',{p_id:id,p_title:null,p_keyword:null,p_folder:'trash'}));toast('휴지통으로 옮겼어요')}
+      else{await q(sb.rpc('fax_update',{p_id:id,p_title:null,p_keyword:null,p_folder:v}));toast(v==='archive'?'보관함으로 옮겼어요':'받은 문서로 옮겼어요')}
+      await load();break}
+    case'fax-open':{const f=S.faxes.find(x=>x.id===id);if(!f)break;
+      if(f.file_data){const bin=atob(f.file_data);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+        const type=/\.(jpe?g|png)$/i.test(f.file_name||'')?'image/'+(/\.png$/i.test(f.file_name)?'png':'jpeg'):/\.tiff?$/i.test(f.file_name||'')?'image/tiff':'application/pdf';
+        const url=URL.createObjectURL(new Blob([arr],{type}));window.open(url,'_blank');
+        if(!f.is_read){await sb.rpc('mark_fax_read',{p_id:id});await load()}break}
+      const w=window.open('','_blank');
+      const {data,error}=await sb.storage.from('faxes').createSignedUrl(f.file_path,600);
+      if(error){w&&w.close();throw error}
+      if(w)w.location=data.signedUrl;else location.href=data.signedUrl;
+      if(!f.is_read){await sb.rpc('mark_fax_read',{p_id:id});await load()}break}
+    case'fax-read':await q(sb.rpc('mark_fax_read',{p_id:id}));await load();break;
+    case'rq':await q(sb.from('service_requests').update({status:v}).eq('id',id));await load();break;
+    case'p-ticket':ticketForm(null,true);break;
+    case'p-req':reqForm(id);break;
+    case'qr':qrView(id);break;
+    case'portal-all':ui.deviceView=null;history.replaceState(null,'',location.pathname);render();break;
+    case'acc-active':await q(sb.from('profiles').update({active:v==='1'}).eq('id',id));toast(v==='1'?'사용을 재개했어요':'사용을 중지했어요');await load();break;
+    case'acc-del':{const pf=S.profiles.find(x=>x.id===id);
+      ask(`${(pf&&pf.display_name)||'이 계정'}을(를) 완전히 삭제할까요? 로그인 계정까지 지워지고 되돌릴 수 없어요.`,'완전히 삭제',
+        async()=>{await q(sb.rpc('delete_user',{p_id:id}));toast('삭제했어요');await load()});break}
+    case'mails':mailsView(id);break;
+    case'mail-add':mailForm2(id,null);break;
+    case'mail-edit':{const m=S.mails.find(x=>x.id===id);if(m)mailForm2(m.client_id,m);break}
+    case'mail-del':{const m=S.mails.find(x=>x.id===id);if(!m)break;
+      ask(`${m.label||m.username} 계정을 삭제할까요? 이 거래처 팩스가 더 이상 자동으로 올라오지 않아요.`,'삭제',
+        async()=>{await q(sb.rpc('mail_account_delete',{p_id:id}));await load();mailsView(m.client_id);toast('삭제했어요')});break}
+    case'docs':docsView(id);break;
+    case'doc-add':docForm(id);break;
+    case'doc-edit':{const d=S.docs.find(x=>x.id===id);if(d)docForm(d.client_id,d);break}
+    case'doc-open':{const d=S.docs.find(x=>x.id===id);if(!d)break;const w=window.open('','_blank');
+      const {data,error}=await sb.storage.from('docs').createSignedUrl(d.file_path,600);
+      if(error){w&&w.close();throw error}
+      if(w)w.location=data.signedUrl;else location.href=data.signedUrl;break}
+    case'doc-del':{const d=S.docs.find(x=>x.id===id);if(!d)break;
+      ask(`"${d.title}" 서류를 삭제할까요?`,'삭제',async()=>{await sb.storage.from('docs').remove([d.file_path]);await q(sb.from('client_documents').delete().eq('id',id));await load();docsView(d.client_id);toast('삭제했어요')});break}
+    case'agent-new':await q(sb.from('agents').insert({client_id:id,name:cname(id)+' 수집 PC'}));await load();agentsView(id);toast('토큰을 만들었어요');break;
+    case'agent-off':{const ag=S.agents.find(x=>x.id===id);
+      ask('이 토큰을 중지할까요? 해당 PC는 더 이상 보고할 수 없어요.','중지',async()=>{await q(sb.from('agents').update({active:false}).eq('id',id));await load();if(ag)agentsView(ag.client_id)});break}
+    case'copy':try{await navigator.clipboard.writeText(v);toast('복사했어요')}catch(_){toast('길게 눌러 직접 복사하세요')}break;
+  }}catch(err){toast(err.userMsg||errMsg(err));console.error(err)}
+});
+document.addEventListener('change',async e=>{
+  if(e.target.id==='monthPick'){ui.month=e.target.value||thisMonth;render()}
+  if(e.target.id==='devFilter'){ui.devFilter=e.target.value;render()}
+  if(e.target.id==='portalClient'){ui.portalClient=e.target.value;render()}
+  if(e.target.dataset.faxClient){const v2=e.target.value;if(!v2)return;
+    try{await q(sb.from('faxes').update({client_id:v2}).eq('id',e.target.dataset.faxClient));toast('거래처를 지정했어요');await load()}catch(err){toast(errMsg(err))}return}
+  if(e.target.dataset.faxSel){e.target.checked?ui.faxSel.add(e.target.dataset.faxSel):ui.faxSel.delete(e.target.dataset.faxSel);render();return}
+  if(e.target.hasAttribute&&e.target.hasAttribute('data-fax-all')){
+    const box=e.target.closest('table');const on=e.target.checked;
+    box.querySelectorAll('[data-fax-sel]').forEach(i=>{on?ui.faxSel.add(i.dataset.faxSel):ui.faxSel.delete(i.dataset.faxSel)});render();return}
+  if(e.target.dataset.faxTitle){try{await q(sb.rpc('fax_update',{p_id:e.target.dataset.faxTitle,p_title:e.target.value.trim(),p_keyword:null,p_folder:null}));toast('저장했어요');await load()}catch(err){toast(errMsg(err))}}
+  if(e.target.dataset.faxKeyword){try{await q(sb.rpc('fax_update',{p_id:e.target.dataset.faxKeyword,p_title:null,p_keyword:e.target.value.trim(),p_folder:null}));toast('저장했어요');await load()}catch(err){toast(errMsg(err))}}
+  if(e.target.id==='faxQ'){ui.faxQ=e.target.value;render()}
+  if(e.target.dataset.role){try{await q(sb.from('profiles').update({client_role:e.target.value}).eq('id',e.target.dataset.role));toast('권한을 바꿨어요');await load()}catch(err){toast(errMsg(err))}}
+  if(e.target.dataset.link){try{await q(sb.from('profiles').update({client_id:e.target.value||null}).eq('id',e.target.dataset.link));toast('연결했어요');await load()}catch(err){toast(errMsg(err))}}
+});
+function fmtYmd(v){const d=(v||'').replace(/[^0-9]/g,'').slice(0,8);
+  if(d.length!==8)return v;return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8)}
+document.addEventListener('input',e=>{
+  if(!e.target.dataset||!e.target.dataset.ymd)return;
+  const clean=e.target.value.replace(/[^0-9-]/g,'').slice(0,10);
+  if(clean!==e.target.value)e.target.value=clean;
+});
+document.addEventListener('blur',e=>{
+  if(!e.target.dataset||!e.target.dataset.ymd)return;
+  e.target.value=fmtYmd(e.target.value);
+},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)closeSheet()});
+setInterval(()=>{if(me&&document.visibilityState==='visible'&&sheet.hidden)load().catch(()=>{})},30000);
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){me=null;showLogin()}});
+boot().catch(err=>{console.error(err);showLogin(errMsg(err))});
+</script>
+</body>
+</html>
