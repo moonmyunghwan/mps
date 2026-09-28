@@ -267,6 +267,16 @@ th{font-weight:700;color:#2B4A76;font-size:14px}
 .cat .d{display:none}
 .faxtable th,.faxtable td{text-align:center;vertical-align:middle}
 .faxtable td input[type=text],.faxtable td input:not([type]){text-align:center}
+
+/* 버전 표시 (작게) */
+.ver{font-size:11px;color:#42587D;font-weight:500}
+.ver-f{margin-top:16px;text-align:center;font-size:11px;color:#9AA8BA}
+header .brand{justify-content:flex-start}
+@media (min-width:900px){
+  header .brand{justify-content:center}
+  header .ver{order:6;margin:0 0 14px 18px}
+}
+@media (max-width:899px){header .ver{align-self:center}}
 /* 제목줄 + 요금 블록 */
 .phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
 .phead .l{flex:1 1 300px;min-width:0}
@@ -284,13 +294,13 @@ th{font-weight:700;color:#2B4A76;font-size:14px}
 <div id="banner"></div>
 <header class="top" id="top" hidden>
   <div class="bar">
-    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span><span style="font-size:11px;color:#7E96BC;font-weight:500;margin-left:6px">v26</span></div>
+    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span></div>
     <div class="mode" role="group" aria-label="화면 전환" id="modeSwitch" hidden>
       <button data-mode="admin" aria-pressed="true">관리자</button>
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
     </div>
     <span class="who" id="who" style="margin-left:auto"></span>
-    <button class="btn sm ghost" data-act="logout">로그아웃</button>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v27</span>
   </div>
   <nav class="tabs" id="tabs"></nav>
 </header>
@@ -417,7 +427,7 @@ function showLogin(msg=''){
       <div class="hero-f">경기도 시흥시 · 031-431-7014<br>복합기 렌탈 · 인쇄 · 인테리어 · 사무실가구 · 이사</div>
     </div>
     <div class="login-form"><div class="sec">
-    <h1>${up?'고객사 계정 만들기':'로그인'} <span style="font-size:12px;color:var(--muted);font-weight:500">v26</span></h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
+    <h1>${up?'고객사 계정 만들기':'로그인'}</h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
     ${msg?`<div class="note" style="margin:0 0 12px">${esc(msg)}</div>`:''}
     <form id="authForm">
       ${up?'<div class="f"><label for="aName">이름 · 회사명</label><input id="aName" required placeholder="예: 홍길동 (한빛세무회계)"></div>':''}
@@ -427,6 +437,7 @@ function showLogin(msg=''){
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
     ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
+    <div class="ver-f">v27</div>
   </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
