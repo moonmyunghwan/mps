@@ -326,7 +326,7 @@ button.tn-cell:hover{border-color:#9DBAD6}
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
     </div>
     <span class="who" id="who" style="margin-left:auto"></span>
-    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v34</span>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v35</span>
   </div>
   <nav class="tabs" id="tabs"></nav>
 </header>
@@ -463,7 +463,7 @@ function showLogin(msg=''){
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
     ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
-    <div class="ver-f">v34</div>
+    <div class="ver-f">v35</div>
   </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
@@ -678,6 +678,11 @@ function faxItem(f,admin){
    :`<button class="btn sm" data-act="fax-move" data-id="${f.id}" data-v="${f.folder==='archive'?'inbox':'archive'}">${f.folder==='archive'?'받은문서로':'보관'}</button><button class="btn sm danger" data-act="fax-move" data-id="${f.id}" data-v="trash">삭제</button>`}
   ${!f.is_read&&!admin?`<button class="btn sm" data-act="fax-read" data-id="${f.id}">확인함</button>`:''}</div></div>`;
 }
+async function markRead(ids){
+  for(let i=0;i<ids.length;i+=8){
+    await Promise.all(ids.slice(i,i+8).map(fid=>sb.rpc('mark_fax_read',{p_id:fid})));
+  }
+}
 function faxBox(list,admin){
   const q=(ui.faxQ||'').trim();
   const fil=list.filter(f=>(f.folder||'inbox')===ui.faxFolder)
@@ -689,11 +694,13 @@ function faxBox(list,admin){
     <div class="mode" style="margin:0">${FOLDERS.map(([k,nm])=>`<button data-act="fax-folder" data-v="${k}" aria-pressed="${ui.faxFolder===k}">${nm} ${cnt(k)}</button>`).join('')}</div>
     <input id="faxQ" value="${esc(ui.faxQ||'')}" placeholder="문서명·검색어·발신번호 검색" style="flex:1;min-width:160px">
     ${admin?'<button class="btn" data-act="fax-fetch">메일 확인</button><button class="btn primary" data-act="add-fax">팩스 등록</button>':''}
+    ${(()=>{const un=fil.filter(f=>!f.is_read).length;return un?`<button class="btn" data-act="fax-readall">모두 읽음 ${un}</button>`:''})()}
     <span class="live" title="팩스가 오면 자동으로 올라옵니다"><i></i>실시간</span></div>
   <div class="toolbar" style="margin-bottom:8px">
     ${ui.faxFolder==='trash'?`<button class="btn sm danger" data-act="fax-bulk" data-v="purge" ${dis}>완전 삭제</button><button class="btn sm" data-act="fax-bulk" data-v="inbox" ${dis}>복원</button>`
       :`<button class="btn sm danger" data-act="fax-bulk" data-v="trash" ${dis}>삭제</button>
     <button class="btn sm" data-act="fax-bulk" data-v="${ui.faxFolder==='archive'?'inbox':'archive'}" ${dis}>${ui.faxFolder==='archive'?'받은문서로':'보관함으로'}</button>`}
+    <button class="btn sm" data-act="fax-bulk" data-v="read" ${dis}>읽음</button>
     <button class="btn sm" data-act="fax-bulk" data-v="mail" ${dis}>메일 발송</button>
     <button class="btn sm primary" data-act="fax-bulk" data-v="down" ${dis}>다운로드</button>
     <span style="font-size:13px;color:var(--muted)">${n?n+'건 선택됨':'문서를 선택하세요'}</span></div>
@@ -1136,7 +1143,16 @@ document.addEventListener('click',async e=>{
       }catch(err){toast(errMsg(err))}
       break}
     case'fax-folder':ui.faxFolder=v;ui.faxSel.clear();render();break;
+    case'fax-readall':{const q2=(ui.faxQ||'').trim();
+      const src=(ui.mode==='portal'?S.faxes.filter(f=>f.client_id===ui.portalClient):S.faxes);
+      const un=src.filter(f=>(f.folder||'inbox')===ui.faxFolder&&!f.is_read)
+        .filter(f=>!q2||[f.title,f.keyword,f.file_name,f.from_number].some(x=>(x||'').includes(q2)));
+      if(!un.length){toast('안 읽은 문서가 없어요');break}
+      await markRead(un.map(f=>f.id));toast(un.length+'건을 읽음 처리했어요');await load();break}
     case'fax-bulk':{const ids=[...ui.faxSel];if(!ids.length)break;
+      if(v==='read'){const un=ids.filter(fid=>{const f=S.faxes.find(x=>x.id===fid);return f&&!f.is_read});
+        if(!un.length){toast('이미 다 읽은 문서예요');ui.faxSel.clear();render();break}
+        await markRead(un);ui.faxSel.clear();toast(un.length+'건을 읽음 처리했어요');await load();break}
       if(v==='down'){for(const fid of ids){const f=S.faxes.find(x=>x.id===fid);if(!f)continue;
         const name=f.file_name||((f.title||'fax')+'.pdf');
         if(f.file_data){const url=b64url(f.file_data,name);const a2=document.createElement('a');a2.href=url;a2.download=name;a2.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
