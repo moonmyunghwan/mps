@@ -294,6 +294,9 @@ button.tn-cell:hover{border-color:#9DBAD6}
 .tn-hint{margin-top:12px;font-size:14px;color:var(--muted);text-align:center}
 .tn-hint b{color:var(--key)}
 
+
+.pill.fax{background:var(--key);color:#fff}
+.pill.mail{background:var(--chip);color:#2B4A76;border:1px solid #C3D3E6}
 /* 실시간 표시 */
 .btn.danger-solid{background:var(--magenta);border-color:var(--magenta);color:#fff}
 .live{display:inline-flex;align-items:center;gap:7px;background:#E4F5EE;border:1px solid #A9DCC8;border-radius:999px;padding:6px 14px;font-size:14px;font-weight:700;color:#0F6B4B;white-space:nowrap}
@@ -323,7 +326,7 @@ button.tn-cell:hover{border-color:#9DBAD6}
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
     </div>
     <span class="who" id="who" style="margin-left:auto"></span>
-    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v33</span>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v34</span>
   </div>
   <nav class="tabs" id="tabs"></nav>
 </header>
@@ -460,7 +463,7 @@ function showLogin(msg=''){
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
     ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
-    <div class="ver-f">v33</div>
+    <div class="ver-f">v34</div>
   </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
@@ -678,7 +681,7 @@ function faxItem(f,admin){
 function faxBox(list,admin){
   const q=(ui.faxQ||'').trim();
   const fil=list.filter(f=>(f.folder||'inbox')===ui.faxFolder)
-    .filter(f=>!q||[f.title,f.keyword,f.file_name,f.from_number].some(v=>(v||'').includes(q)));
+    .filter(f=>!q||[f.title,f.keyword,f.file_name,f.from_number,f.kind==='email'?'메일':'팩스'].some(v=>(v||'').includes(q)));
   const cnt=k=>list.filter(f=>(f.folder||'inbox')===k).length;
   const sel=ui.faxSel;const n=fil.filter(f=>sel.has(f.id)).length;
   const dis=n?'':'disabled';
@@ -700,7 +703,7 @@ function faxBox(list,admin){
     <th>기능</th><th>크기(KB)</th><th>확장</th><th>수신한 날짜</th></tr></thead><tbody>
   ${fil.length?fil.map(f=>`<tr>
     <td><input type="checkbox" data-fax-sel="${f.id}" ${sel.has(f.id)?'checked':''} aria-label="선택"></td>
-    <td>${admin?(f.client_id?esc(cname(f.client_id)):`<select data-fax-client="${f.id}" aria-label="거래처 지정" style="padding:4px 6px;border:1px solid var(--magenta);border-radius:7px;background:var(--sheet);font-size:12px"><option value="">거래처 지정</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>`):'복합기'}${!f.is_read?' <span class="pill new">새</span>':''}</td>
+    <td>${f.kind==='email'?'<span class="pill mail">메일</span>':'<span class="pill fax">팩스</span>'}${!f.is_read?' <span class="pill new">새</span>':''}${admin?`<div style="margin-top:4px">${f.client_id?esc(cname(f.client_id)):`<select data-fax-client="${f.id}" aria-label="거래처 지정" style="padding:4px 6px;border:1px solid var(--magenta);border-radius:7px;background:var(--sheet);font-size:12px"><option value="">거래처 지정</option>${S.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>`}</div>`:''}</td>
     <td>${esc(f.from_number||'-')}</td>
     <td><input data-fax-title="${f.id}" value="${esc(f.title||'')}" placeholder="제목을 입력해 주세요"></td>
     <td><input data-fax-keyword="${f.id}" value="${esc(f.keyword||'')}" placeholder="담당자·거래처"></td>
