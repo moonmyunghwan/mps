@@ -188,7 +188,7 @@ nav.tabs button[aria-current="true"]{background:#2E5C9A;color:#fff;font-weight:7
   nav.tabs button{width:100%;text-align:left;padding:12px 14px;border-radius:9px}
   header .who{order:4;margin:0!important;padding:14px 18px 0;max-width:none;white-space:normal;font-size:14px;border-top:1px solid var(--navyLine)}
   header .btn.ghost{order:5;align-self:flex-start;margin:6px 14px 18px;padding:0 4px;font-size:14px;font-weight:700}
-  main{padding:26px 28px 64px;max-width:none;margin:0}
+  main{padding:26px 28px 64px;max-width:none;margin:0;min-width:0}
   body:has(#top[hidden]) main{padding:0}
 }
 @media (max-width:899px){
@@ -247,6 +247,17 @@ th{font-weight:700;color:#2B4A76;font-size:14px}
   .hero-list{margin-top:22px;gap:11px}
   .hero-f{margin-top:24px}
 }
+
+/* 고객사 화면 2단 */
+.pcols{display:grid;grid-template-columns:minmax(0,1fr) 356px;gap:16px;align-items:start}
+.pcol{display:flex;flex-direction:column;gap:16px;min-width:0}
+.pcol .sec{margin-bottom:0}
+@media (max-width:1100px){.pcols{grid-template-columns:minmax(0,1fr)}}
+.meters.col{grid-template-columns:1fr;gap:16px}
+.meter .mnote{font-size:13px;color:var(--muted);text-align:right;line-height:1.55;flex:none}
+.sec>.toner:first-child{margin-top:0;padding-top:0;border-top:0}
+.devt{font-weight:700;font-size:18px;margin-top:14px}
+.devt span{color:var(--muted);font-weight:500;font-size:15px}
 /* 제목줄 + 요금 블록 */
 .phead{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px}
 .phead .l{flex:1 1 300px;min-width:0}
@@ -264,7 +275,7 @@ th{font-weight:700;color:#2B4A76;font-size:14px}
 <div id="banner"></div>
 <header class="top" id="top" hidden>
   <div class="bar">
-    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span><span style="font-size:11px;color:#7E96BC;font-weight:500;margin-left:6px">v22</span></div>
+    <div class="brand"><span class="cmyk" aria-hidden="true"><i style="background:var(--cyan)"></i><i style="background:var(--magenta)"></i><i style="background:var(--yellow)"></i><i style="background:#FFFFFF"></i></span><span id="brandName">주식회사 공정컴퍼니</span><span style="font-size:11px;color:#7E96BC;font-weight:500;margin-left:6px">v23</span></div>
     <div class="mode" role="group" aria-label="화면 전환" id="modeSwitch" hidden>
       <button data-mode="admin" aria-pressed="true">관리자</button>
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
@@ -397,7 +408,7 @@ function showLogin(msg=''){
       <div class="hero-f">경기도 시흥시 · 031-431-7014<br>복합기 렌탈 · 인쇄 · 인테리어 · 사무실가구 · 이사</div>
     </div>
     <div class="login-form"><div class="sec">
-    <h1>${up?'고객사 계정 만들기':'로그인'} <span style="font-size:12px;color:var(--muted);font-weight:500">v22</span></h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
+    <h1>${up?'고객사 계정 만들기':'로그인'} <span style="font-size:12px;color:var(--muted);font-weight:500">v23</span></h1><p class="sub">${up?'가입 후 담당자가 회사를 연결해 드려요.':'복합기 사용량, 토너, 팩스를 확인하세요.'}</p>
     ${msg?`<div class="note" style="margin:0 0 12px">${esc(msg)}</div>`:''}
     <form id="authForm">
       ${up?'<div class="f"><label for="aName">이름 · 회사명</label><input id="aName" required placeholder="예: 홍길동 (한빛세무회계)"></div>':''}
@@ -478,11 +489,11 @@ function render(){
   if(ui.mode==='portal'){app.innerHTML=vPortal();return}
   app.innerHTML=({home:vHome,clients:vClients,devices:vDevices,billing:vBilling,toner:vToner,support:vSupport,fax:vFax,platform:vPlatform,accounts:vAccounts}[ui.tab]||vHome)();
 }
-function meter(lab,n,col,foot){
-  return `<div class="meter"><span class="bar" style="background:${col}"></span><div style="flex:1;min-width:0"><div class="lab">${lab}</div><div class="big num">${nf(n)}<i>${foot}</i></div></div></div>`;
+function meter(lab,n,col,foot,note){
+  return `<div class="meter"><span class="bar" style="background:${col}"></span><div style="flex:1;min-width:0"><div class="lab">${lab}</div><div class="big num">${nf(n)}<i>${foot}</i></div></div>${note?`<div class="mnote">${note}</div>`:''}</div>`;
 }
-function meters(mono,color,foot='장'){
-  return `<div class="meters">${meter('이번 달 흑백 출력',mono,'var(--ink)',foot)}${meter('이번 달 컬러 출력',color,'var(--cyan)',foot)}</div>`;
+function meters(mono,color,foot='장',cls='',nm='',nc=''){
+  return `<div class="meters ${cls}">${meter('이번 달 흑백 출력',mono,'var(--ink)',foot,nm)}${meter('이번 달 컬러 출력',color,'var(--cyan)',foot,nc)}</div>`;
 }
 function vHome(){
   let mono=0,color=0,total=0;const missing=[];
@@ -692,21 +703,30 @@ function vPortal(){
   const faxes=S.faxes.filter(f=>f.client_id===cid),tks=S.tickets.filter(t=>t.client_id===cid),reqs=S.requests.filter(r=>r.client_id===cid);
   let mono=0,color=0;b.rows.forEach(r=>{if(r.u){mono+=+r.u.used_mono;color+=+r.u.used_color}});
   const unread=faxes.filter(f=>!f.is_read).length;
+  const inclM=devs.reduce((a,d)=>a+(+d.incl_mono||0),0),inclC=devs.reduce((a,d)=>a+(+d.incl_color||0),0);
+  let ovM=0,ovC=0;b.rows.forEach(r=>{if(r.u){ovM+=+r.u.over_mono;ovC+=+r.u.over_color}});
   return `${isAdmin()?`<div class="toolbar"><select id="portalClient" aria-label="고객사 선택">${S.clients.map(x=>`<option value="${x.id}" ${x.id===cid?'selected':''}>${esc(x.name)}</option>`).join('')}</select><span style="font-size:13px;color:var(--muted)">고객사가 로그인하면 보는 화면이에요</span></div>`:''}
   <div class="phead"><div class="l"><h1>${esc(c.name)}</h1><p class="sub">${mLabel(thisMonth)} 사용 현황</p></div>
   ${canSeeMoney()?`<div class="r"><div class="k">이번 달 예상 요금</div><div class="v num">${won(b.total)}</div><div class="n">VAT 포함 · 월말 검침 후 확정</div></div>`:''}</div>
   ${canSeeMoney()?`<div style="margin:-6px 0 16px"><button class="btn sm" data-act="invoice" data-id="${cid}">청구서 자세히 보기</button></div>`:''}
-  ${meters(mono,color,'장 사용')}
-  <div class="sec" style="margin-top:14px"><div class="sec-h"><h2>토너 상태</h2>${devs.some(d=>lowKeys(d).length)?'<span class="pill warn">부족한 토너가 있어요</span>':''}</div>${devs.map(d=>`<div style="font-weight:600;font-size:14px;margin-top:6px">${esc(d.model)} <span style="color:var(--muted);font-weight:400">${esc(d.location||'')}</span></div>${tonerBlock(d,true)}`).join('')||'<div class="empty">설치된 장비가 없어요.</div>'}</div>
-  <div class="sec"><div class="sec-h"><h2>팩스 수신함</h2>${unread?`<span class="pill new">새 팩스 ${unread}</span>`:''}</div>${faxBox(faxes,false)}</div>
+  <div class="pcols">
+   <div class="pcol">
+    <div class="sec">${devs.length?devs.map(d=>`${devs.length>1?`<div class="devt">${esc(d.model)} <span>${esc(d.location||'')}</span></div>`:''}${tonerBlock(d,true)}`).join(''):'<div class="empty">설치된 장비가 없어요.</div>'}</div>
+    <div class="sec"><div class="sec-h"><h2>팩스 수신함</h2>${unread?`<span class="pill new">새 팩스 ${unread}</span>`:''}</div>${faxBox(faxes,false)}</div>
+   </div>
+   <div class="pcol">
+    ${meters(mono,color,'장',' col',`무료 ${nf(inclM)}장<br>${ovM?'초과 '+nf(ovM)+'장':'초과 없음'}`,`무료 ${nf(inclC)}장<br>${ovC?'초과 '+nf(ovC)+'장':'초과 없음'}`)}
+    <div class="sec"><div class="sec-h"><h2>원격지원</h2></div><button class="btn primary" style="width:100%;padding:11px" data-act="p-ticket">지원 요청하기</button><div class="list">${tks.length?tks.slice(0,4).map(tkItem).join(''):'<div class="empty">프린터에 문제가 있으면 요청해 주세요. 담당자가 원격으로 확인해 드려요.</div>'}</div></div>
+    <div class="sec"><div class="sec-h"><h2>다른 서비스도 필요하세요?</h2></div><div class="cats">${S.cats.filter(x=>x.key!=='print_rental'&&x.active).map(x=>`<button class="cat" data-act="p-req" data-id="${x.key}"><div class="ic">${ICONS[x.key]||'📦'}</div><div class="n">${esc(x.name)}</div><div class="d">문의하기</div></button>`).join('')}</div>
+    ${reqs.length?`<div class="list" style="margin-top:12px">${reqs.map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))} <span class="pill ${r.status==='접수'?'new':r.status==='상담중'?'go':'done'}">${esc(r.status)}</span></div><div class="m">${esc(r.detail)}</div></div></div>`).join('')}</div>`:''}</div>
+   </div>
+  </div>
   ${(()=>{const dl=S.docs.filter(d=>d.client_id===cid&&d.share_with_client);return dl.length?`<div class="sec"><div class="sec-h"><h2>서류</h2></div><div class="list">${dl.map(d=>`<div class="item"><div class="main"><div class="t">${esc(d.title)} <span class="pill">${esc(d.category)}</span></div><div class="m">${d.signed_at?'작성일 '+esc(d.signed_at):''}</div></div><div class="acts"><button class="btn sm" data-act="doc-open" data-id="${d.id}">열기</button></div></div>`).join('')}</div></div>`:''})()}
-  <div class="sec"><div class="sec-h"><h2>원격지원</h2><div class="right"><button class="btn primary" data-act="p-ticket">지원 요청하기</button></div></div><div class="list">${tks.length?tks.map(tkItem).join(''):'<div class="empty">프린터에 문제가 있으면 요청해 주세요. 담당자가 원격으로 확인해 드려요.</div>'}</div></div>
   <div class="sec"><div class="sec-h"><h2>우리 회사 장비 ${devs.length}대</h2></div>${devs.map(d=>devCard(d,false)).join('')||'<div class="empty">설치된 장비가 없어요.</div>'}</div>
   ${isClientAdmin()?`<div class="sec"><div class="sec-h"><h2>직원 계정</h2></div><div class="list">${S.profiles.filter(p=>p.client_id===cid).map(p=>`<div class="item"><div class="main"><div class="t">${esc(p.display_name||'(이름 없음)')} ${p.client_role==='admin'?'<span class="pill go">회사 관리자</span>':'<span class="pill">일반 직원</span>'}${p.active===false?' <span class="pill new">사용 중지</span>':''}</div><div class="m">가입 ${dt(p.created_at)}</div></div>
     <div class="acts">${p.id===me.id?'<span style="font-size:12px;color:var(--muted)">본인</span>':`${roleSelect(p)}<button class="btn sm ${p.active===false?'':'danger'}" data-act="acc-active" data-id="${p.id}" data-v="${p.active===false?'1':'0'}">${p.active===false?'사용 재개':'사용 중지'}</button>`}</div></div>`).join('')}</div>
     <div class="note">직원이 사이트에서 [고객사 계정 만들기]로 가입하면 이 목록에 나타나요. 일반 직원에게는 요금 정보가 보이지 않아요.</div></div>`:''}
-  <div class="sec"><div class="sec-h"><h2>다른 서비스도 필요하세요?</h2></div><div class="cats">${S.cats.filter(x=>x.key!=='print_rental'&&x.active).map(x=>`<button class="cat" data-act="p-req" data-id="${x.key}"><div class="ic">${ICONS[x.key]||'📦'}</div><div class="n">${esc(x.name)}</div><div class="d">문의하기</div></button>`).join('')}</div>
-  ${reqs.length?`<div class="list" style="margin-top:12px">${reqs.map(r=>`<div class="item"><div class="main"><div class="t">${esc(catName(r.category))} <span class="pill ${r.status==='접수'?'new':r.status==='상담중'?'go':'done'}">${esc(r.status)}</span></div><div class="m">${esc(r.detail)}</div></div></div>`).join('')}</div>`:''}</div>`;
+`;
 }
 
 /* ---------- 시트 / 폼 ---------- */
