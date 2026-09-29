@@ -326,7 +326,7 @@ button.tn-cell:hover{border-color:#9DBAD6}
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
     </div>
     <span class="who" id="who" style="margin-left:auto"></span>
-    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v35</span>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v37</span>
   </div>
   <nav class="tabs" id="tabs"></nav>
 </header>
@@ -463,7 +463,7 @@ function showLogin(msg=''){
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
     ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
-    <div class="ver-f">v35</div>
+    <div class="ver-f">v37</div>
   </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
@@ -693,7 +693,8 @@ function faxBox(list,admin){
   return `<div class="toolbar">
     <div class="mode" style="margin:0">${FOLDERS.map(([k,nm])=>`<button data-act="fax-folder" data-v="${k}" aria-pressed="${ui.faxFolder===k}">${nm} ${cnt(k)}</button>`).join('')}</div>
     <input id="faxQ" value="${esc(ui.faxQ||'')}" placeholder="문서명·검색어·발신번호 검색" style="flex:1;min-width:160px">
-    ${admin?'<button class="btn" data-act="fax-fetch">메일 확인</button><button class="btn primary" data-act="add-fax">팩스 등록</button>':''}
+    <button class="btn" data-act="fax-fetch">지금 확인</button>
+    ${admin?'<button class="btn primary" data-act="add-fax">팩스 등록</button>':''}
     ${(()=>{const un=fil.filter(f=>!f.is_read).length;return un?`<button class="btn" data-act="fax-readall">모두 읽음 ${un}</button>`:''})()}
     <span class="live" title="팩스가 오면 자동으로 올라옵니다"><i></i>실시간</span></div>
   <div class="toolbar" style="margin-bottom:8px">
@@ -1126,11 +1127,12 @@ document.addEventListener('click',async e=>{
       }catch(err){msg=errMsg(err);console.error(err)}
       const body=lines.length?lines.map(l=>`<div style="font-size:13px;color:var(--muted);margin-top:4px">${esc(l)}</div>`).join(''):'';
       if(ok){
-        openView('메일 확인 결과',`<div style="font-size:16px;font-weight:600;margin-bottom:8px">새로 등록한 팩스 ${saved}건</div>${body||'<div class="empty">기록이 없어요.</div>'}`);
+        if(saved){openView('확인 완료',`<div style="font-size:16px;font-weight:700;margin-bottom:8px">새 팩스 ${saved}건을 가져왔어요</div>${body}`)}
+        else{closeSheet();toast('새로 온 팩스가 없어요')}
         await load();
       }else{
         openView('메일 확인 실패',`<div class="note" style="margin:0 0 8px;word-break:break-all">${esc(msg||'알 수 없는 오류')}</div>${body}`);
-        btn.disabled=false;btn.textContent='메일 확인';
+        btn.disabled=false;btn.textContent='지금 확인';
       }
       break}
     case'reload':{const b2=a;b2.disabled=true;b2.textContent='확인 중…';
@@ -1213,6 +1215,7 @@ document.addEventListener('click',async e=>{
       if(w)w.location=data.signedUrl;else location.href=data.signedUrl;break}
     case'doc-del':{const d=S.docs.find(x=>x.id===id);if(!d)break;
       ask(`"${d.title}" 서류를 삭제할까요?`,'삭제',async()=>{await sb.storage.from('docs').remove([d.file_path]);await q(sb.from('client_documents').delete().eq('id',id));await load();docsView(d.client_id);toast('삭제했어요')});break}
+    case'agents':agentsView(id);break;
     case'agent-new':await q(sb.from('agents').insert({client_id:id,name:cname(id)+' 수집 PC'}));await load();agentsView(id);toast('토큰을 만들었어요');break;
     case'agent-off':{const ag=S.agents.find(x=>x.id===id);
       ask('이 토큰을 중지할까요? 해당 PC는 더 이상 보고할 수 없어요.','중지',async()=>{await q(sb.from('agents').update({active:false}).eq('id',id));await load();if(ag)agentsView(ag.client_id)});break}
