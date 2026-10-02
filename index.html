@@ -326,7 +326,7 @@ button.tn-cell:hover{border-color:#9DBAD6}
       <button data-mode="portal" aria-pressed="false">고객사 화면</button>
     </div>
     <span class="who" id="who" style="margin-left:auto"></span>
-    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v37</span>
+    <button class="btn sm ghost" data-act="logout">로그아웃</button><span class="ver">v40</span>
   </div>
   <nav class="tabs" id="tabs"></nav>
 </header>
@@ -405,13 +405,20 @@ function clientBill(cid,m){
 
 /* ---------- 데이터 ---------- */
 async function q(p){const {data,error}=await p;if(error)throw error;return data}
+// 팩스 본문은 목록에 없다. 열거나 저장할 때 그 한 건만 가져온다.
+async function faxBody(id){
+  const {data,error}=await sb.from('faxes').select('file_data').eq('id',id).maybeSingle();
+  if(error)throw error;
+  return data?data.file_data:null;
+}
 async function load(){
   const jobs={
     clients:sb.from('clients').select('*').order('name'),
     devices:sb.from('devices').select('*').order('created_at'),
     bills:sb.from('monthly_bills').select('*'),
     tickets:sb.from('tickets').select('*').order('created_at',{ascending:false}).limit(300),
-    faxes:sb.from('faxes').select('*').order('received_at',{ascending:false}).limit(300),
+    // PDF 본문(file_data)은 목록에서 빼고, 열 때만 따로 가져온다. 안 그러면 한 번에 수십 MB를 받는다.
+    faxes:sb.from('faxes').select('id,client_id,kind,from_number,pages,title,keyword,file_name,file_path,size_bytes,source,folder,is_read,received_at,created_at').order('received_at',{ascending:false}).limit(300),
     orders:sb.from('toner_orders').select('*').order('created_at',{ascending:false}).limit(300),
     requests:sb.from('service_requests').select('*').order('created_at',{ascending:false}).limit(300),
     cats:sb.from('service_categories').select('*').order('sort'),
@@ -463,7 +470,7 @@ function showLogin(msg=''){
     </form>
     <div class="switch">${up?'이미 계정이 있나요? <button data-act="auth-login">로그인</button>':'처음 오셨나요? <button data-act="auth-signup">고객사 계정 만들기</button>'}</div>
     ${up?'<div class="note" style="margin-top:14px">가입하시면 담당자가 회사를 연결해 드립니다. 연결 전에는 화면이 비어 있을 수 있어요.</div>':''}
-    <div class="ver-f">v37</div>
+    <div class="ver-f">v40</div>
   </div></div></div>`;
   $('#authForm').onsubmit=async e=>{
     e.preventDefault();const f=e.target;f.classList.add('loading');
@@ -584,7 +591,7 @@ function vClients(){
   return `<h1>거래처</h1><p class="sub">렌탈 계약을 맺은 고객사</p>
   <div class="sec"><div class="sec-h"><h2>${S.clients.length}곳</h2><div class="right"><button class="btn primary" data-act="add-client">거래처 추가</button></div></div>
   <div class="list">${S.clients.length?S.clients.map(c=>{const n=S.devices.filter(d=>d.client_id===c.id).length;const b=clientBill(c.id,thisMonth);const ag=S.agents.filter(a=>a.client_id===c.id&&a.active);const users=S.profiles.filter(p=>p.client_id===c.id).length;
-  return `<div class="item"><div class="main"><div class="t">${esc(c.name)}</div><div class="m">${esc(c.contact||'')} ${esc(c.phone||'')} · 장비 ${n}대 · 이번 달 ${won(b.total)}</div><div class="m">${(()=>{const ma=S.mails.filter(m=>m.client_id===c.id);if(!ma.length)return '<span style="color:var(--magenta)">팩스 메일 계정 없음</span>';
+  return `<div class="item"><div class="main"><div class="t">${esc(c.name)}</div><div class="m">${esc(c.contact||'')} ${esc(c.phone||'')}${c.fax_no?' · 팩스 '+esc(c.fax_no):''} · 장비 ${n}대 · 이번 달 ${won(b.total)}</div><div class="m">${(()=>{const ma=S.mails.filter(m=>m.client_id===c.id);if(!ma.length)return '<span style="color:var(--magenta)">팩스 메일 계정 없음</span>';
   const bad=ma.filter(m=>m.last_result&&m.last_result.startsWith('실패')).length;
   return `팩스 메일 ${ma.length}개${bad?' <span style="color:var(--magenta)">('+bad+'개 오류)</span>':''}`})()} · 서류 ${S.docs.filter(x=>x.client_id===c.id).length}건 · 고객 계정 ${users}개 · 수집 프로그램 ${ag.length?ag.map(a=>a.last_seen_at?'최근 보고 '+dt(a.last_seen_at):'보고 없음').join(', '):'없음'}</div></div>
   <div class="acts"><button class="btn sm" data-act="invoice" data-id="${c.id}">청구서</button><button class="btn sm" data-act="mails" data-id="${c.id}">팩스 메일</button><button class="btn sm" data-act="docs" data-id="${c.id}">서류</button><button class="btn sm" data-act="agents" data-id="${c.id}">수집 토큰</button><button class="btn sm" data-act="edit-client" data-id="${c.id}">수정</button></div></div>`}).join(''):'<div class="empty">첫 거래처를 추가해 보세요.</div>'}</div></div>`;
@@ -667,13 +674,13 @@ function vSupport(){
 }
 const FOLDERS=[['inbox','받은 문서'],['archive','보관함'],['trash','휴지통']];
 const fsize=n=>n?(n<1024?n+'B':n<1048576?(n/1024).toFixed(1)+'KB':(n/1048576).toFixed(1)+'MB'):'';
-const fext=f=>{const m=(f.file_name||'').match(/\.([a-z0-9]+)$/i);return m?m[1].toUpperCase():(f.file_path||f.file_data?'PDF':'')};
+const fext=f=>{const m=(f.file_name||'').match(/\.([a-z0-9]+)$/i);return m?m[1].toUpperCase():(f.file_path||f.file_name?'PDF':'')};
 function faxItem(f,admin){
   return `<div class="item"><div class="main"><div class="t">${esc(f.title||f.file_name||'제목 없음')} ${!f.is_read?'<span class="pill new">새 팩스</span>':''}${f.source==='agent'?'<span class="pill">자동 수신</span>':''}</div>
   <div class="faxrow"><input data-fax-title="${f.id}" value="${esc(f.title||'')}" placeholder="문서명을 입력하세요" aria-label="문서명">
   <input data-fax-keyword="${f.id}" value="${esc(f.keyword||'')}" placeholder="검색어 (담당자·거래처)" aria-label="검색어"></div>
   <div class="m">${admin?esc(cname(f.client_id))+' · ':''}${f.from_number?esc(f.from_number)+' · ':''}${dt(f.received_at)}${f.size_bytes?' · '+fsize(f.size_bytes):''}${fext(f)?' · '+fext(f):''}</div></div>
-  <div class="acts">${(f.file_path||f.file_data)?`<button class="btn sm" data-act="fax-open" data-id="${f.id}">열기</button><button class="btn sm" data-act="fax-down" data-id="${f.id}">저장</button><button class="btn sm" data-act="fax-mail" data-id="${f.id}">메일발송</button>`:'<span style="font-size:12px;color:var(--muted)">파일 없음</span>'}
+  <div class="acts">${(f.file_path||f.file_name)?`<button class="btn sm" data-act="fax-open" data-id="${f.id}">열기</button><button class="btn sm" data-act="fax-down" data-id="${f.id}">저장</button><button class="btn sm" data-act="fax-mail" data-id="${f.id}">메일발송</button>`:'<span style="font-size:12px;color:var(--muted)">파일 없음</span>'}
   ${f.folder==='trash'?`<button class="btn sm" data-act="fax-move" data-id="${f.id}" data-v="inbox">복원</button>${admin?`<button class="btn sm danger" data-act="del-fax" data-id="${f.id}">완전 삭제</button>`:''}`
    :`<button class="btn sm" data-act="fax-move" data-id="${f.id}" data-v="${f.folder==='archive'?'inbox':'archive'}">${f.folder==='archive'?'받은문서로':'보관'}</button><button class="btn sm danger" data-act="fax-move" data-id="${f.id}" data-v="trash">삭제</button>`}
   ${!f.is_read&&!admin?`<button class="btn sm" data-act="fax-read" data-id="${f.id}">확인함</button>`:''}</div></div>`;
@@ -715,7 +722,7 @@ function faxBox(list,admin){
     <td>${esc(f.from_number||'-')}</td>
     <td><input data-fax-title="${f.id}" value="${esc(f.title||'')}" placeholder="제목을 입력해 주세요"></td>
     <td><input data-fax-keyword="${f.id}" value="${esc(f.keyword||'')}" placeholder="담당자·거래처"></td>
-    <td style="white-space:nowrap">${(f.file_path||f.file_data)?`<button class="btn sm" data-act="fax-open" data-id="${f.id}">보기</button> <button class="btn sm" data-act="fax-down" data-id="${f.id}">저장</button>`:'-'}</td>
+    <td style="white-space:nowrap">${(f.file_path||f.file_name)?`<button class="btn sm" data-act="fax-open" data-id="${f.id}">보기</button> <button class="btn sm" data-act="fax-down" data-id="${f.id}">저장</button>`:'-'}</td>
     <td class="num">${f.size_bytes?(f.size_bytes/1024).toFixed(1):'-'}</td>
     <td>${fext(f)||'-'}</td>
     <td style="white-space:nowrap">${dt(f.received_at)}</td></tr>`).join('')
@@ -878,7 +885,8 @@ function clientForm(c){
   openForm(c?'거래처 수정':'거래처 추가',[
     {k:'name',label:'상호',req:true},{k:'biz_no',label:'사업자번호'},
     {k:'contact',label:'담당자',pair:true},{k:'phone',label:'연락처',type:'tel'},
-    {k:'email',label:'청구서 받을 이메일',type:'email'},{k:'address',label:'주소'},{k:'memo',label:'메모',type:'textarea'}],
+    {k:'email',label:'청구서 받을 이메일',type:'email',pair:true},{k:'fax_no',label:'팩스 번호',type:'tel'},
+    {k:'address',label:'주소'},{k:'memo',label:'메모',type:'textarea'}],
     c||{},async d=>{if(c)await q(sb.from('clients').update(d).eq('id',c.id));else await q(sb.from('clients').insert(d))},
     {extra:c?`<button type="button" class="btn danger ghost" data-act="del-client" data-id="${c.id}" style="margin-right:auto">삭제</button>`:''});
 }
@@ -1050,11 +1058,11 @@ function mailForm2(cid,m){
     {k:'client_id',label:'거래처',type:'select',options:clientOpts(),req:true},
     {k:'label',label:'이름',ph:'예: 시흥지사 복합기 메일'},
     {k:'username',label:'메일 주소',type:'email',req:true,ph:'example@naver.com'},
-    {k:'password',label:m?'애플리케이션 비밀번호 (바꿀 때만 입력)':'애플리케이션 비밀번호',req:!m,
-      hint:'네이버 내정보 → 보안설정 → 애플리케이션 비밀번호에서 발급'},
-    {k:'host',label:'메일 서버',pair:true,ph:'imap.naver.com'},{k:'from_filter',label:'보낸사람만 읽기',ph:'복합기 발신 주소 (비우면 안 읽은 메일 전체)'},
+    {k:'password',label:m?'메일 비밀번호 (바꿀 때만 입력)':'메일 비밀번호',req:!m,
+      hint:'하이웍스는 계정 비밀번호 그대로. 네이버는 내정보 → 보안설정에서 앱 비밀번호 발급'},
+    {k:'host',label:'메일 서버',pair:true,ph:'pop3s.hiworks.com 또는 imap.naver.com'},{k:'from_filter',label:'보낸사람만 읽기',ph:'복합기 발신 주소 (비우면 안 읽은 메일 전체)'},
     {k:'active',label:'사용',type:'check',cap:'이 계정에서 팩스를 가져오기'}],
-    m?{...m,password:''}:{client_id:cid,host:'imap.naver.com',active:true},
+    m?{...m,password:''}:{client_id:cid,host:'pop3s.hiworks.com',active:true},
     async x=>{
       await q(sb.rpc('mail_account_save',{p_id:m?m.id:null,p_client_id:x.client_id,p_label:x.label,
         p_host:x.host,p_username:x.username,p_password:x.password||'',p_folder:'INBOX',
@@ -1157,7 +1165,8 @@ document.addEventListener('click',async e=>{
         await markRead(un);ui.faxSel.clear();toast(un.length+'건을 읽음 처리했어요');await load();break}
       if(v==='down'){for(const fid of ids){const f=S.faxes.find(x=>x.id===fid);if(!f)continue;
         const name=f.file_name||((f.title||'fax')+'.pdf');
-        if(f.file_data){const url=b64url(f.file_data,name);const a2=document.createElement('a');a2.href=url;a2.download=name;a2.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
+        const body=await faxBody(fid);
+        if(body){const url=b64url(body,name);const a2=document.createElement('a');a2.href=url;a2.download=name;a2.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
         else if(f.file_path){const {data}=await sb.storage.from('faxes').createSignedUrl(f.file_path,600,{download:name});if(data){const a2=document.createElement('a');a2.href=data.signedUrl;a2.download=name;a2.click()}}
         await new Promise(r=>setTimeout(r,400))}
         toast(ids.length+'건 저장했어요');break}
@@ -1173,7 +1182,8 @@ document.addEventListener('click',async e=>{
     case'fax-mail':mailForm([id]);break;
     case'fax-down':{const f=S.faxes.find(x=>x.id===id);if(!f)break;
       const name=f.file_name||((f.title||'fax')+'.pdf');
-      if(f.file_data){const url=b64url(f.file_data,name);const a2=document.createElement('a');a2.href=url;a2.download=name;a2.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
+      const body=await faxBody(id);
+      if(body){const url=b64url(body,name);const a2=document.createElement('a');a2.href=url;a2.download=name;a2.click();setTimeout(()=>URL.revokeObjectURL(url),10000)}
       else if(f.file_path){const {data,error}=await sb.storage.from('faxes').createSignedUrl(f.file_path,600,{download:name});if(error)throw error;const a2=document.createElement('a');a2.href=data.signedUrl;a2.download=name;a2.click()}
       break}
     case'fax-move':{const f=S.faxes.find(x=>x.id===id);
@@ -1181,7 +1191,8 @@ document.addEventListener('click',async e=>{
       else{await q(sb.rpc('fax_update',{p_id:id,p_title:null,p_keyword:null,p_folder:v}));toast(v==='archive'?'보관함으로 옮겼어요':'받은 문서로 옮겼어요')}
       await load();break}
     case'fax-open':{const f=S.faxes.find(x=>x.id===id);if(!f)break;
-      if(f.file_data){const bin=atob(f.file_data);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+      const body=await faxBody(id);
+      if(body){const bin=atob(body);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
         const type=/\.(jpe?g|png)$/i.test(f.file_name||'')?'image/'+(/\.png$/i.test(f.file_name)?'png':'jpeg'):/\.tiff?$/i.test(f.file_name||'')?'image/tiff':'application/pdf';
         const url=URL.createObjectURL(new Blob([arr],{type}));window.open(url,'_blank');
         if(!f.is_read){await sb.rpc('mark_fax_read',{p_id:id});await load()}break}
